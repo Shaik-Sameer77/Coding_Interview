@@ -1,0 +1,573 @@
+[
+  {
+    "id": 12,
+    "phaseId": 1,
+    "phaseTitle": "Phase 1: Introduction, Resume & Career",
+    "question": "How does your experience match this job description?",
+    "difficulty": "Junior/Mid",
+    "directPitch": "My background maps directly to your job description: Next.js/React frontend with optimistic state and Kendo Scheduler, NestJS/Express backend with JWT guards and AES encryption, MySQL/PostgreSQL with stored procedures and transactions, Stripe/Razorpay webhooks, and Vitest testing delivered in Agile sprints.",
+    "spokenAnswer": "From my review of the job description, this role requires a Full Stack Developer who can work across the frontend, middleware, and backend with JavaScript, TypeScript, REST APIs, databases, automated testing, and secure coding practices. Here is how my experience matches every requirement:\n\n1. JavaScript & TypeScript:\nDaily use across all my projects. I use strict TypeScript interfaces, generics, discriminated unions, and class-validator DTOs on NestJS to prevent type mismatches.\n\n2. Frontend (React & Next.js):\nIn Chrona, I build with Next.js 15, App Router, and server/client components. In LesHub, I built an optimistic drag-and-drop lead board, customized KendoReact Scheduler event renderers, and configured dynamic tenant PWA manifests. In my Portfolio admin, I use React with Vite and Material UI.\n\n3. Backend & REST APIs (Node.js, Express, NestJS):\nIn Chrona and my Portfolio Platform, I build modular NestJS APIs with dependency injection, guards, and interceptors. In LesHub, I work with Node.js and Express middlewares, handling error pipelines, file uploads, and RESTful status codes.\n\n4. Databases (SQL & MongoDB):\nExtensive SQL experience with MySQL (Chrona, LesHub) and PostgreSQL (Portfolio Platform). I've written stored procedures, fixed loop bugs (LESHUB-558), used MySQL JSON_TABLE, and managed TypeORM/Prisma transactions. I've also worked with MongoDB for document-based logs and catalogs.\n\n5. Security, Payments & Reliability:\nI've implemented Stripe and Razorpay HMAC webhook signature verifications, AES request encryption with FormData bypass, DOMPurify XSS sanitization, and HttpOnly cookie authentication guards.\n\n6. Testing & Agile:\nI write unit and integration tests using Vitest and React Testing Library, and deliver in 2-week Jira sprints with pull requests and code reviews.\n\nWhere I have gaps, such as GraphQL or specific consumer-lending underwriting rules, I am transparent and learn fast.",
+    "detailedExplanation": "What the interviewer is evaluating: whether you understand the role and can be honest about gaps. The role is a Full\nStack Developer (Hyderabad, hybrid) covering front-end, middleware, and back-end work, with strong JavaScript\nand TypeScript, the MERN stack, REST APIs, secure code, tests, Git, and Agile delivery.\nYour answer\nFrom what I read, this role is about building web applications across the frontend, middleware, and\nbackend with JavaScript, TypeScript, and the MERN stack.\nOn the frontend, I build with React and Next.js. At LesHub, for example, I worked with React, Redux\nToolkit, and SWR. On the backend, I've built APIs with Node.js, Express, and NestJS, and I've worked\nwith MySQL, PostgreSQL, and MongoDB. I'm comfortable designing and consuming REST APIs and\nhandling JSON.",
+    "coachingTip": "Map each job requirement to a different concrete project story (e.g. React -> LesHub, NestJS -> Chrona, Payments -> Portfolio).",
+    "codeSnippet": null,
+    "followUps": [
+      {
+        "question": "How did you verify this in production?",
+        "answer": "I verified it through staging tests, monitored application telemetry, and confirmed error rates remained at zero."
+      }
+    ],
+    "keyTakeaway": "whether you understand the role and can be honest about gaps. The role is a Full Stack Developer (Hyderabad, hybrid) covering front-end, middleware, and back-end work, with strong JavaScript"
+  },
+  {
+    "id": 14,
+    "phaseId": 2,
+    "phaseTitle": "Phase 2: Project Deep Dives",
+    "question": "Tell me about a project you are particularly proud of.",
+    "difficulty": "Senior",
+    "directPitch": "My proudest project is my full-stack Portfolio Platform built in a Turborepo monorepo with Next.js, React/Vite admin, NestJS, and PostgreSQL. It incorporates Stripe/Razorpay raw-buffer webhook verification, AES interceptor decoupling, SEO slug vs DB ID resolution, Google Calendar OAuth booking, and Groq AI SSE streaming.",
+    "spokenAnswer": "I'm proud of my work across both enterprise client platforms and my own Portfolio Platform, but if I had to highlight one project that showcases end-to-end full-stack depth, it's my Portfolio Platform.\n\nI architected it as a modern multi-app system using a Turborepo monorepo:\n1. Public Customer App: Built with Next.js and TypeScript, utilizing Server Components for fast SEO and First Contentful Paint.\n2. Internal Admin App: A separate React application built with Vite and Material UI for managing products, blog posts, and appointments without bloating public bundles.\n3. Backend Gateway: Built with NestJS and PostgreSQL using Prisma ORM.\n\nWhat made this project technically rewarding were the complex integration challenges:\n- Stripe & Razorpay Payments: I built server-to-server webhook handlers that verify HMAC-SHA256 signatures using raw request body buffers, ensuring idempotency so retries never create duplicate purchases.\n- Interceptor Decoupling: I diagnosed and fixed a bug where a global AES response-decryption interceptor on Axios broke the native fetch call used by Stripe Checkout, resolving it by routing all calls through a unified, properly-scoped HTTP client.\n- Identifier Mapping: I resolved a mismatch between human-readable SEO slugs on the frontend and internal numeric database IDs at the controller/service boundary.\n- AI Assistant: I integrated Groq LLaMA 3.3 70B with Server-Sent Events (SSE) streaming for real-time text delivery with an in-memory prompt cache.\n\nThis project gave me comprehensive ownership over UX, security, payment compliance, and system boundaries. If you'd like a production work example from my job at Tayseer, I can also discuss Chrona's edge cookie synchronization or LesHub's multi-tenant scheduling ERP.",
+    "detailedExplanation": "What the interviewer is evaluating: ownership, technical depth, and whether you can tell a project story clearly. Your\nstrongest answer can be the Portfolio Platform because it lets you discuss frontend, backend, databases, payments,\nsecurity, and AI in one project. Chrona is an excellent alternative if the interviewer wants a production-work\nexample.\nYour answer - Portfolio Platform\nOne project I'm particularly proud of is my Portfolio Platform. I wanted to build more than a static portfolio,\nso I developed it as a full-stack application with a public website, content and product management,\npayment functionality, booking workflows, and an AI-powered assistant.\nThe public-facing application uses Next.js and TypeScript. I also have a separate admin application built\nwith React, Vite, and Material UI, with a NestJS backend and PostgreSQL database. The platform",
+    "coachingTip": "Frame the Portfolio Platform as a demonstration of multi-app architectural ownership, while offering Chrona or LesHub if the interviewer prefers a corporate SaaS story.",
+    "codeSnippet": null,
+    "followUps": [
+      {
+        "question": "What was your individual contribution?",
+        "answer": "The platform is my own project, and I have worked across its frontend, backend, and integrations. That includes building the public application, the admin interface, backend APIs, database-related functionality, and integrations such as payments and booking workflows. One of the things I learned was that end-to-end ownership requires understanding not only the happy path but also how failures move through the system. For example, the checkout flow must remain consistent even when shared API response handling behaves differently from what a particular integration expects. I'm happy to walk through a specific part of the implementation, including the code and the trade-offs I considered.   Be ready to explain one specific feature from the actual codebase. Don't claim that you personally wrote every line without assistance if you used AI tools or external libraries."
+      },
+      {
+        "question": "Tell me more about the Stripe checkout bug.",
+        "answer": "The issue was caused by a shared response-handling assumption. A global Axios response interceptor handled the application's encrypted responses, but the Stripe checkout flow used a raw fetch request that did not follow the same decryption path. That meant the two request paths were not consistent in how they handled the response. I addressed this by moving the relevant request through the central Axios client, where the response-decryption behaviour was already defined. The broader lesson was that shared HTTP-client behaviour needs to be designed carefully. An interceptor can be convenient because it centralises common logic, but it can also break a feature if that feature expects a different response format or bypasses the shared client. I would test both the ordinary API flow and the checkout flow after changing a shared interceptor, because a change that fixes one endpoint can affect other consumers."
+      },
+      {
+        "question": "Why did you integrate both Stripe and Razorpay?",
+        "answer": "The platform includes both integrations, which allowed me to work with two payment-provider workflows. It also gave me experience handling different provider APIs and payment responses. The important engineering principle is that I shouldn't assume a browser redirect alone proves that a payment has succeeded. The backend needs to verify the provider's payment result using the appropriate mechanism. In the integrations I worked on, that included Stripe webhook handling and Razorpay signature verification. Having two providers also means that the application needs a clear internal payment state so that the UI and order records do not rely on provider-specific response formats."
+      },
+      {
+        "question": "What would you improve in this project?",
+        "answer": "I would continue strengthening the automated tests around payment flows, webhook retries, duplicate events, and failures that occur between checkout and the backend updating an order. I would also review the booking flow for concurrent requests and ensure that conflicting bookings cannot be created. For the AI assistant, I would focus on grounding responses in relevant source information and ensuring that access to private data is controlled. More generally, I would measure performance, review logging and monitoring, and make sure external-service failures produce understandable errors without exposing sensitive information.   Chrona (Tayseer Technologies)"
+      }
+    ],
+    "keyTakeaway": "ownership, technical depth, and whether you can tell a project story clearly. Your strongest answer can be the Portfolio Platform because it lets you discuss frontend, backend, databases, payments,",
+    "projectTag": "Project Ecosystem Overview"
+  },
+  {
+    "id": 19,
+    "phaseId": 2,
+    "phaseTitle": "Phase 2: Project Deep Dives",
+    "question": "Why did you use a stored procedure instead of calling the repository",
+    "difficulty": "Senior",
+    "directPitch": "The original approach generated repeated database operations for individual entries. That created unnecessary round trips and increased the overall time required to save a timesheet. A loop is perfectly reasonable for a small number of independent records. The problem arises when each iteration trig...",
+    "spokenAnswer": "The original approach generated repeated database operations for individual entries. That created\r\nunnecessary round trips and increased the overall time required to save a timesheet.\r\nA loop is perfectly reasonable for a small number of independent records. The problem arises when each\r\niteration triggers several database operations. If the application submits 30 entries and performs multiple\r\nsequential queries for every entry, it accumulates communication overhead and repeated database work.\r\nThe stored-procedure approach allowed us to process the data using set-based SQL operations within\r\nthe database. Instead of repeatedly calling the database from application code, we passed the bulk data\r\nand processed it together. Bulk processing lets the database operate on a collection of rows and reduces\r\nthe number of round trips.\r\nI wouldn't replace all repository calls with stored procedures. Repository-based CRUD is usually simpler\r\nand easier to maintain for ordinary operations. I chose a bulk-oriented approach because this particular\r\nworkload had a significant performance problem, and I choose based on the workload, performance\r\nrequirements, and complexity of the operation.",
+    "detailedExplanation": "The original approach generated repeated database operations for individual entries. That created\r\nunnecessary round trips and increased the overall time required to save a timesheet.\r\nA loop is perfectly reasonable for a small number of independent records. The problem arises when each\r\niteration triggers several database operations. If the application submits 30 entries and performs multiple\r\nsequential queries for every entry, it accumulates communication overhead and repeated database work.\r\nThe stored-procedure approach allowed us to process the data using set-based SQL operations within\r\nthe database. Instead of repeatedly calling the database from application code, we passed the bulk data\r\nand processed it together. Bulk processing lets the database operate on a collection of rows and reduces\r\nthe number of round trips.\r\nI wouldn't replace all repository calls with stored procedures. Repository-based CRUD is usually simpler\r\nand easier to maintain for ordinary operations. I chose a bulk-oriented approach because this particular\r\nworkload had a significant performance problem, and I choose based on the workload, performance\r\nrequirements, and complexity of the operation.",
+    "coachingTip": "Say only what you really did. Ensure spoken answers match your code and resume.",
+    "codeSnippet": null,
+    "followUps": [
+      {
+        "question": "Why not use Promise.all()?",
+        "answer": "Promise.all() can execute multiple operations concurrently, but it doesn't eliminate the underlying database work or round trips. It can also increase database load and connection-pool pressure. For operations that naturally fit set-based SQL, bulk processing is often a better fit."
+      },
+      {
+        "question": "Could a single bulk INSERT have been sufficient?",
+        "answer": "A single bulk insert would not necessarily cover the full workflow because the operation also needed to handle updates, deletions, existing record IDs, and total recalculation."
+      },
+      {
+        "question": "What are the disadvantages of stored procedures? How do you version, deploy and",
+        "answer": "test them? Be ready to say: business logic in the database is harder to unit test and version than application code, so you keep it for data-intensive operations only. Explain how your team actually deploys and tests them rather than guessing."
+      }
+    ],
+    "keyTakeaway": "whether you choose tools for a reason and know the trade-offs. Your answer",
+    "projectTag": "Chrona • React 19 & Next.js 15 Migration"
+  },
+  {
+    "id": 23,
+    "phaseId": 2,
+    "phaseTitle": "Phase 2: Project Deep Dives",
+    "question": "Tell me about a bug that occurred because the frontend and backend",
+    "difficulty": "Senior",
+    "directPitch": "A useful example from my project experience is the authentication-state inconsistency in Chrona. The frontend used a client-readable cookie to determine whether the user appeared logged in, but the backend used the actual authentication token to authorize protected operations. When the two became in...",
+    "spokenAnswer": "A useful example from my project experience is the authentication-state inconsistency in Chrona.\r\nThe frontend used a client-readable cookie to determine whether the user appeared logged in, but the\r\nbackend used the actual authentication token to authorize protected operations. When the two became\r\ninconsistent, the frontend's assumption no longer matched the backend's decision.\r\nI investigated the difference between the client-side state and the backend response, then worked on\r\nmaking stale authentication state easier to detect and clear.\r\nThe lesson was that frontend state is not the source of truth for security. The frontend can improve the\r\nuser experience, but the backend must remain authoritative.",
+    "detailedExplanation": "A useful example from my project experience is the authentication-state inconsistency in Chrona.\r\nThe frontend used a client-readable cookie to determine whether the user appeared logged in, but the\r\nbackend used the actual authentication token to authorize protected operations. When the two became\r\ninconsistent, the frontend's assumption no longer matched the backend's decision.\r\nI investigated the difference between the client-side state and the backend response, then worked on\r\nmaking stale authentication state easier to detect and clear.\r\nThe lesson was that frontend state is not the source of truth for security. The frontend can improve the\r\nuser experience, but the backend must remain authoritative.",
+    "coachingTip": "Say only what you really did. Ensure spoken answers match your code and resume.",
+    "codeSnippet": null,
+    "followUps": [
+      {
+        "question": "How would you prevent this in future features?",
+        "answer": "I would test expired sessions, missing cookies, invalid tokens, and 401 responses, and centralise common authentication handling rather than duplicating it across components."
+      }
+    ],
+    "keyTakeaway": "whether you understand that frontend state is never the source of truth for security.",
+    "projectTag": "Chrona • Axios 401 Silent Token Refresh"
+  },
+  {
+    "id": 27,
+    "phaseId": 2,
+    "phaseTitle": "Phase 2: Project Deep Dives",
+    "question": "What is multi-tenancy, and how do you prevent data leakage between",
+    "difficulty": "Senior",
+    "directPitch": "Multi-tenancy means that one application serves multiple organisations or customers, with each tenant having its own logically separated data and configuration. One approach is to use a shared database with tenant identifiers on relevant records. Another is to use separate schemas or databases, depe...",
+    "spokenAnswer": "Multi-tenancy means that one application serves multiple organisations or customers, with each tenant\r\nhaving its own logically separated data and configuration.\r\nOne approach is to use a shared database with tenant identifiers on relevant records. Another is to use\r\nseparate schemas or databases, depending on the isolation and operational requirements.\r\nIn a shared-database design, tenant context must be enforced in the backend. It isn't enough to hide\r\nanother tenant's data in the frontend. Queries and mutations need to be constrained to the authenticated\r\ntenant, and the server should not blindly trust a tenant ID supplied by the client.\r\nIn LesHub, tenant-aware database operations were important. Tenant identifiers needed to be included\r\nin the relevant stored procedure calls so that operations were scoped correctly. I treat tenant isolation as\r\na security boundary, not just a UI filtering requirement.\r\nI would also test negative cases: a user from tenant A should not be able to retrieve or update tenant B's\r\nrecords simply by changing an ID in the request.",
+    "detailedExplanation": "Multi-tenancy means that one application serves multiple organisations or customers, with each tenant\r\nhaving its own logically separated data and configuration.\r\nOne approach is to use a shared database with tenant identifiers on relevant records. Another is to use\r\nseparate schemas or databases, depending on the isolation and operational requirements.\r\nIn a shared-database design, tenant context must be enforced in the backend. It isn't enough to hide\r\nanother tenant's data in the frontend. Queries and mutations need to be constrained to the authenticated\r\ntenant, and the server should not blindly trust a tenant ID supplied by the client.\r\nIn LesHub, tenant-aware database operations were important. Tenant identifiers needed to be included\r\nin the relevant stored procedure calls so that operations were scoped correctly. I treat tenant isolation as\r\na security boundary, not just a UI filtering requirement.\r\nI would also test negative cases: a user from tenant A should not be able to retrieve or update tenant B's\r\nrecords simply by changing an ID in the request.",
+    "coachingTip": "Say only what you really did. Ensure spoken answers match your code and resume.",
+    "codeSnippet": null,
+    "followUps": [
+      {
+        "question": "Where should the tenant ID come from? Can you trust a tenant ID sent by the frontend?",
+        "answer": "I would derive or validate it using trusted authentication and authorization context. If the request includes a tenant ID, the backend must confirm that the authenticated user is permitted to act within that tenant."
+      },
+      {
+        "question": "How would you test tenant isolation?",
+        "answer": "I would test attempts to access another tenant's records, including requests that manipulate IDs or parameters."
+      }
+    ],
+    "keyTakeaway": "whether you treat tenant isolation as a security boundary and not only a UI filter. Your answer",
+    "projectTag": "LesHub • Kendo Scheduler Layout Styling"
+  },
+  {
+    "id": 29,
+    "phaseId": 2,
+    "phaseTitle": "Phase 2: Project Deep Dives",
+    "question": "How did you make scheduler event text readable against different",
+    "difficulty": "Senior",
+    "directPitch": "When events have different background colours, a fixed text colour may not remain readable. I used a contrast-based approach to choose an appropriate text colour based on the background luminance. The principle is to calculate the relative luminance of the background and choose a text colour with su...",
+    "spokenAnswer": "When events have different background colours, a fixed text colour may not remain readable. I used a\r\ncontrast-based approach to choose an appropriate text colour based on the background luminance.\r\nThe principle is to calculate the relative luminance of the background and choose a text colour with\r\nsufficient contrast. That is more robust than simply choosing white or black based on intuition.\r\n\n\r\nHowever, contrast should ideally be measured using the accessibility contrast ratio rather than relying\r\nonly on a simple luminance threshold. For production UI, I would check that the foreground and\r\nbackground meet the applicable contrast requirements, including for smaller text.",
+    "detailedExplanation": "When events have different background colours, a fixed text colour may not remain readable. I used a\r\ncontrast-based approach to choose an appropriate text colour based on the background luminance.\r\nThe principle is to calculate the relative luminance of the background and choose a text colour with\r\nsufficient contrast. That is more robust than simply choosing white or black based on intuition.\r\n\n\r\nHowever, contrast should ideally be measured using the accessibility contrast ratio rather than relying\r\nonly on a simple luminance threshold. For production UI, I would check that the foreground and\r\nbackground meet the applicable contrast requirements, including for smaller text.",
+    "coachingTip": "Say only what you really did. Ensure spoken answers match your code and resume.",
+    "codeSnippet": null,
+    "followUps": [
+      {
+        "question": "Why does accessibility matter in an internal business application?",
+        "answer": "Internal users also need to read the interface clearly. Poor contrast increases errors and reduces usability. Accessibility is part of making a reliable product, not only a requirement for public websites."
+      }
+    ],
+    "keyTakeaway": "UI polish, accessibility awareness, and whether you know the real contrast rule. Your answer",
+    "projectTag": "LesHub • SWR Notification Deduplication"
+  },
+  {
+    "id": 31,
+    "phaseId": 2,
+    "phaseTitle": "Phase 2: Project Deep Dives",
+    "question": "Tell me about the numeric-input bug that caused excessive processing",
+    "difficulty": "Senior",
+    "directPitch": "In LesHub, we encountered a problem related to rating-scale configuration. HTML numeric inputs return their values as strings, even when the input is configured with type=\"number\". If those strings are used without conversion, the + operator may concatenate strings rather than add numbers. Compariso...",
+    "spokenAnswer": "In LesHub, we encountered a problem related to rating-scale configuration. HTML numeric inputs return\r\ntheir values as strings, even when the input is configured with type=\"number\".\r\nIf those strings are used without conversion, the + operator may concatenate strings rather than add\r\nnumbers. Comparisons can also behave unexpectedly if both operands are strings. In a loop or\r\ncalculation that depends on these values, that can cause incorrect output or unexpectedly large amounts\r\nof processing, potentially exhausting memory.\r\nThe fix was to normalise values to numbers, validate that the step was finite and positive, use appropriate\r\nnumeric calculations and rounding, and enforce a maximum iteration count of 500.\r\nThe lesson was to validate data types at system boundaries rather than assume that an HTML input\r\nproduces a JavaScript number.\r\nHow you would debug a browser crash or memory spike in React\r\nI would first reproduce the issue and inspect browser memory usage, console errors, and the sequence\r\nof user actions that triggers the problem.\r\nI would look for unbounded loops, repeated state updates, unexpectedly large arrays, event listeners that\r\naren't cleaned up, and objects retained by closures or subscriptions.",
+    "detailedExplanation": "In LesHub, we encountered a problem related to rating-scale configuration. HTML numeric inputs return\r\ntheir values as strings, even when the input is configured with type=\"number\".\r\nIf those strings are used without conversion, the + operator may concatenate strings rather than add\r\nnumbers. Comparisons can also behave unexpectedly if both operands are strings. In a loop or\r\ncalculation that depends on these values, that can cause incorrect output or unexpectedly large amounts\r\nof processing, potentially exhausting memory.\r\nThe fix was to normalise values to numbers, validate that the step was finite and positive, use appropriate\r\nnumeric calculations and rounding, and enforce a maximum iteration count of 500.\r\nThe lesson was to validate data types at system boundaries rather than assume that an HTML input\r\nproduces a JavaScript number.\r\nHow you would debug a browser crash or memory spike in React\r\nI would first reproduce the issue and inspect browser memory usage, console errors, and the sequence\r\nof user actions that triggers the problem.\r\nI would look for unbounded loops, repeated state updates, unexpectedly large arrays, event listeners that\r\naren't cleaned up, and objects retained by closures or subscriptions.",
+    "coachingTip": "Say only what you really did. Ensure spoken answers match your code and resume.",
+    "codeSnippet": null,
+    "followUps": [
+      {
+        "question": "Why can + cause trouble in JavaScript?",
+        "answer": "Because + performs either numeric addition or string concatenation depending on the operands. For example, '2' + 1 produces '21', not 3. Explicitly converting and validating numeric input prevents that category of bug."
+      },
+      {
+        "question": "Why is a maximum iteration count useful?",
+        "answer": "A maximum iteration count is a defensive safeguard, not a replacement for correct validation. The calculation still needs to reject invalid values and handle the business requirements properly."
+      }
+    ],
+    "keyTakeaway": "JavaScript type-coercion knowledge and how you debug a browser memory problem.",
+    "projectTag": "LesHub • Dutch nl-NL Formatting (Intl)"
+  },
+  {
+    "id": 33,
+    "phaseId": 2,
+    "phaseTitle": "Phase 2: Project Deep Dives",
+    "question": "What bug can happen when a payment return page loads before the",
+    "difficulty": "Senior",
+    "directPitch": "A payment provider may redirect the user back to the application before the server has received or processed the corresponding webhook. If the return page assumes that the payment is already complete, it may display an incorrect status even though the payment is still being processed. The safer appr...",
+    "spokenAnswer": "A payment provider may redirect the user back to the application before the server has received or\r\nprocessed the corresponding webhook.\r\nIf the return page assumes that the payment is already complete, it may display an incorrect status even\r\nthough the payment is still being processed.\r\nThe safer approach is to treat the browser redirect as a signal to refresh or retrieve the invoice or order\r\nstatus from the backend. The backend should use trusted payment-provider verification and webhook\r\nprocessing to establish the authoritative status.\r\nWebhook handling must also be idempotent because providers may retry notifications.",
+    "detailedExplanation": "A payment provider may redirect the user back to the application before the server has received or\r\nprocessed the corresponding webhook.\r\nIf the return page assumes that the payment is already complete, it may display an incorrect status even\r\nthough the payment is still being processed.\r\nThe safer approach is to treat the browser redirect as a signal to refresh or retrieve the invoice or order\r\nstatus from the backend. The backend should use trusted payment-provider verification and webhook\r\nprocessing to establish the authoritative status.\r\nWebhook handling must also be idempotent because providers may retry notifications.",
+    "coachingTip": "Say only what you really did. Ensure spoken answers match your code and resume.",
+    "codeSnippet": null,
+    "followUps": [
+      {
+        "question": "Can the frontend mark a payment as successful by itself? What if the webhook never",
+        "answer": "arrives? The frontend should not independently establish a trusted paid status. If the webhook is delayed or missing, I would use a controlled reconciliation or status-verification process rather than assume that the payment failed or succeeded."
+      }
+    ],
+    "keyTakeaway": "whether you understand asynchronous payment confirmation. Your answer",
+    "projectTag": "LesHub • Mollie iDEAL Payment Gateway"
+  },
+  {
+    "id": 39,
+    "phaseId": 2,
+    "phaseTitle": "Phase 2: Project Deep Dives",
+    "question": "What is the difference between a payment redirect and a payment",
+    "difficulty": "Senior",
+    "directPitch": "A redirect is part of the browser flow. It returns the user to the application after interacting with the payment provider. A webhook is a server-to-server notification from the payment provider about an event, such as a payment status change. The redirect is useful for the user experience, while th...",
+    "spokenAnswer": "A redirect is part of the browser flow. It returns the user to the application after interacting with the\r\npayment provider.\r\nA webhook is a server-to-server notification from the payment provider about an event, such as a\r\npayment status change.\r\nThe redirect is useful for the user experience, while the webhook can provide an authoritative event for\r\nupdating the backend's payment state after verification.\r\nI design the application so that a successful redirect alone doesn't automatically mark an order as paid.\r\nThe backend verifies the payment status using trusted provider information and handles duplicate events\r\nsafely.",
+    "detailedExplanation": "A redirect is part of the browser flow. It returns the user to the application after interacting with the\r\npayment provider.\r\nA webhook is a server-to-server notification from the payment provider about an event, such as a\r\npayment status change.\r\nThe redirect is useful for the user experience, while the webhook can provide an authoritative event for\r\nupdating the backend's payment state after verification.\r\nI design the application so that a successful redirect alone doesn't automatically mark an order as paid.\r\nThe backend verifies the payment status using trusted provider information and handles duplicate events\r\nsafely.",
+    "coachingTip": "Say only what you really did. Ensure spoken answers match your code and resume.",
+    "codeSnippet": null,
+    "followUps": [
+      {
+        "question": "What if the user closes the browser before returning?",
+        "answer": "A webhook allows the backend to process a payment event even if the user never returns to the application, provided the webhook is successfully delivered and processed."
+      }
+    ],
+    "keyTakeaway": "clear thinking about browser flow versus server events. Your answer",
+    "projectTag": "Portfolio • AWS S3 Presigned Uploads"
+  },
+  {
+    "id": 41,
+    "phaseId": 2,
+    "phaseTitle": "Phase 2: Project Deep Dives",
+    "question": "How did you resolve the mismatch between SEO slugs and numeric",
+    "difficulty": "Senior",
+    "directPitch": "The issue was that the frontend used SEO-friendly product slugs, while the database identified products using numeric IDs. Some application paths expected one representation while the backend expected the other. Those identifiers serve different purposes: a slug is useful for readable URLs, while a ...",
+    "spokenAnswer": "The issue was that the frontend used SEO-friendly product slugs, while the database identified products\r\nusing numeric IDs. Some application paths expected one representation while the backend expected the\r\nother. Those identifiers serve different purposes: a slug is useful for readable URLs, while a database ID\r\nidentifies the stored record.\r\nThe fix involved resolving the identifier at the DTO and service boundary so that the backend could\r\nsupport the appropriate slug-or-ID lookup instead of assuming that every incoming identifier was\r\nnumeric.\r\nThis is important because a URL identifier is part of the external API contract. The public URL structure\r\ncan remain readable without forcing the database to use slugs as its primary identifiers.\r\nI would validate the identifier, handle records that don't exist, and make sure that the lookup is\r\nconstrained by the relevant access rules. I would also avoid ambiguous parsing rules that accidentally\r\ninterpret one identifier format as another.",
+    "detailedExplanation": "The issue was that the frontend used SEO-friendly product slugs, while the database identified products\r\nusing numeric IDs. Some application paths expected one representation while the backend expected the\r\nother. Those identifiers serve different purposes: a slug is useful for readable URLs, while a database ID\r\nidentifies the stored record.\r\nThe fix involved resolving the identifier at the DTO and service boundary so that the backend could\r\nsupport the appropriate slug-or-ID lookup instead of assuming that every incoming identifier was\r\nnumeric.\r\nThis is important because a URL identifier is part of the external API contract. The public URL structure\r\ncan remain readable without forcing the database to use slugs as its primary identifiers.\r\nI would validate the identifier, handle records that don't exist, and make sure that the lookup is\r\nconstrained by the relevant access rules. I would also avoid ambiguous parsing rules that accidentally\r\ninterpret one identifier format as another.",
+    "coachingTip": "Say only what you really did. Ensure spoken answers match your code and resume.",
+    "codeSnippet": null,
+    "followUps": [
+      {
+        "question": "Why not expose the numeric database ID directly?",
+        "answer": "That is a valid option, but human-readable slugs can be useful for SEO and readability. The choice depends on the product's requirements. If slugs are used, the backend needs a clear and reliable mapping to the underlying record."
+      },
+      {
+        "question": "What happens if two products have the same slug, or a slug is renamed?",
+        "answer": "I would normally keep canonical identifier resolution on the backend for operations that require a database record. Slugs should have suitable uniqueness rules, and renamed slugs may require redirects or another deliberate URL strategy."
+      }
+    ],
+    "keyTakeaway": "API contract thinking and identifier design. Your answer",
+    "projectTag": "Portfolio • XSS Sanitization (DOMPurify)"
+  },
+  {
+    "id": 43,
+    "phaseId": 2,
+    "phaseTitle": "Phase 2: Project Deep Dives",
+    "question": "How would you integrate Google Calendar booking into a web",
+    "difficulty": "Senior",
+    "directPitch": "I would separate the booking workflow into availability, authentication and authorization, booking creation, and confirmation. The application needs to determine available time slots, account for the relevant calendar, and prevent invalid bookings. Where Google Calendar access requires OAuth, the ba...",
+    "spokenAnswer": "I would separate the booking workflow into availability, authentication and authorization, booking\r\ncreation, and confirmation.\r\nThe application needs to determine available time slots, account for the relevant calendar, and prevent\r\ninvalid bookings. Where Google Calendar access requires OAuth, the backend should securely manage\r\nthe OAuth flow and tokens.\r\nWhen a user selects a slot, the backend should validate the request and create the booking using the\r\nappropriate Calendar API operation. It should handle failures and possible conflicts - for example, if\r\nanother booking occupies the slot between the initial availability check and booking creation.\r\nThe Portfolio Platform includes Google Calendar OAuth/API booking functionality, so I would explain the\r\nimplementation based on the specific flow I worked on rather than claiming unimplemented scheduling\r\nguarantees.",
+    "detailedExplanation": "I would separate the booking workflow into availability, authentication and authorization, booking\r\ncreation, and confirmation.\r\nThe application needs to determine available time slots, account for the relevant calendar, and prevent\r\ninvalid bookings. Where Google Calendar access requires OAuth, the backend should securely manage\r\nthe OAuth flow and tokens.\r\nWhen a user selects a slot, the backend should validate the request and create the booking using the\r\nappropriate Calendar API operation. It should handle failures and possible conflicts - for example, if\r\nanother booking occupies the slot between the initial availability check and booking creation.\r\nThe Portfolio Platform includes Google Calendar OAuth/API booking functionality, so I would explain the\r\nimplementation based on the specific flow I worked on rather than claiming unimplemented scheduling\r\nguarantees.",
+    "coachingTip": "Say only what you really did. Ensure spoken answers match your code and resume.",
+    "codeSnippet": null,
+    "followUps": [
+      {
+        "question": "Where should refresh tokens be stored, and how would you prevent double booking?",
+        "answer": "I would keep sensitive tokens on the server, use the minimum required permissions, and handle conflicts through revalidation and a defined booking-consistency strategy."
+      }
+    ],
+    "keyTakeaway": "OAuth understanding and double-booking awareness. Explain the flow you actually built.",
+    "projectTag": "Portfolio • Google Calendar 2-Way Sync"
+  },
+  {
+    "id": 44,
+    "phaseId": 2,
+    "phaseTitle": "Phase 2: Project Deep Dives",
+    "question": "Tell me about the Axios 401 problem and the circular dependency in",
+    "difficulty": "Senior/Lead",
+    "directPitch": "Situation: In Chrona, the Next.js frontend calls the NestJS API through one shared Axios client. Problem: When a login expired, a page could send several requests at the same moment, and each one came back with a 401. Each failure tried to clear the login state and redirect the user, so the cleanup ...",
+    "spokenAnswer": "Situation: In Chrona, the Next.js frontend calls the NestJS API through one shared Axios client.\r\nProblem: When a login expired, a page could send several requests at the same moment, and each one\r\ncame back with a 401. Each failure tried to clear the login state and redirect the user, so the cleanup ran\r\nmany times. On top of that, the interceptor needed the Zustand auth store, but the store already imported\r\nthe Axios client, so importing the store back into the client created a circular dependency.\r\nAction: I added a small latch, which is a flag, so only the first 401 runs the cleanup and the rest are\r\nignored. To break the circular import, I used a dynamic import() inside the interceptor, so the store is\r\nloaded only when a 401 actually happens.\r\nResult: An expired session now clears the state once and sends the user to sign-in cleanly.\r\nLearning: Shared code like an HTTP client should not depend on the modules that depend on it, and\r\nany \"handle once\" logic needs an explicit guard.",
+    "detailedExplanation": "Situation: In Chrona, the Next.js frontend calls the NestJS API through one shared Axios client.\r\nProblem: When a login expired, a page could send several requests at the same moment, and each one\r\ncame back with a 401. Each failure tried to clear the login state and redirect the user, so the cleanup ran\r\nmany times. On top of that, the interceptor needed the Zustand auth store, but the store already imported\r\nthe Axios client, so importing the store back into the client created a circular dependency.\r\nAction: I added a small latch, which is a flag, so only the first 401 runs the cleanup and the rest are\r\nignored. To break the circular import, I used a dynamic import() inside the interceptor, so the store is\r\nloaded only when a 401 actually happens.\r\nResult: An expired session now clears the state once and sends the user to sign-in cleanly.\r\nLearning: Shared code like an HTTP client should not depend on the modules that depend on it, and\r\nany \"handle once\" logic needs an explicit guard.",
+    "coachingTip": "Say only what you really did. Ensure spoken answers match your code and resume.",
+    "codeSnippet": null,
+    "followUps": [
+      {
+        "question": "Why not just handle the 401 in each component?",
+        "answer": "Because that duplicates the logic and it is easy to forget in one place. A central interceptor gives one consistent behaviour. The backend still decides whether the token is valid; the interceptor only reacts to the answer. Match this answer to what your code really does. If your latch works differently, describe your version."
+      }
+    ],
+    "keyTakeaway": "whether you understand interceptors, module imports, and handling many failing requests at once.",
+    "projectTag": "Portfolio • Docker Compose Deployment"
+  },
+  {
+    "id": 47,
+    "phaseId": 2,
+    "phaseTitle": "Phase 2: Project Deep Dives",
+    "question": "Tell me about the Next.js build error on Windows (MAX_PATH).",
+    "difficulty": "Senior/Lead",
+    "directPitch": "What the interviewer is evaluating: build and deployment knowledge, and honesty about how well you understand the fix. Your answer Situation: The Chrona frontend build failed on Windows. Problem: The error was about the Windows path-length limit (MAX_PATH, 260 characters). Next.js and node_modules c...",
+    "spokenAnswer": "What the interviewer is evaluating: build and deployment knowledge, and honesty about how well you understand\nthe fix.\nYour answer\nSituation: The Chrona frontend build failed on Windows.\nProblem: The error was about the Windows path-length limit (MAX_PATH, 260 characters). Next.js and\nnode_modules create very deep folder paths, so some files could not be created or copied.\nAction: I enabled Next.js output: 'standalone'. In my understanding, standalone output traces which\nfiles the server really needs and puts only those into a small self-contained folder, which avoids the deep\ncopy of everything.\nResult: The build completed.",
+    "detailedExplanation": "What the interviewer is evaluating: build and deployment knowledge, and honesty about how well you understand\nthe fix.\nYour answer\nSituation: The Chrona frontend build failed on Windows.\nProblem: The error was about the Windows path-length limit (MAX_PATH, 260 characters). Next.js and\nnode_modules create very deep folder paths, so some files could not be created or copied.\nAction: I enabled Next.js output: 'standalone'. In my understanding, standalone output traces which\nfiles the server really needs and puts only those into a small self-contained folder, which avoids the deep\ncopy of everything.\nResult: The build completed.",
+    "coachingTip": "Say only what you really did. Ensure spoken answers match your code and resume.",
+    "codeSnippet": null,
+    "followUps": [
+      {
+        "question": "How did you verify this in production?",
+        "answer": "I verified it through staging tests, monitored application telemetry, and confirmed error rates remained at zero."
+      }
+    ],
+    "keyTakeaway": "build and deployment knowledge, and honesty about how well you understand the fix.",
+    "projectTag": "Chrona • Window Event Listener Memory Leak"
+  },
+  {
+    "id": 48,
+    "phaseId": 2,
+    "phaseTitle": "Phase 2: Project Deep Dives",
+    "question": "Tell me about the Vitest unhandled-rejection problem with Promise.all.",
+    "difficulty": "Senior/Lead",
+    "directPitch": "Situation: I was writing tests in Chrona with Vitest. Problem: The test run failed with an \"unhandled rejection\" error even though the assertions looked correct. The test used Promise.all with several promises that could reject. Investigation: Promise.all rejects as soon as the first promise rejects...",
+    "spokenAnswer": "Situation: I was writing tests in Chrona with Vitest.\r\nProblem: The test run failed with an \"unhandled rejection\" error even though the assertions looked\r\ncorrect. The test used Promise.all with several promises that could reject.\r\nInvestigation: Promise.all rejects as soon as the first promise rejects. Any other promise that rejects\r\nlater still has no handler attached, so Node reports an unhandled rejection, and Vitest fails the run.\r\nAction: I changed the test so every promise had its rejection handled, for example by using\r\nPromise.allSettled or by attaching handlers before the combined call.\r\nResult: The test became stable and the run passed.\r\nLearning: Promise.all handles only the first failure. When I need to observe every outcome,\r\nPromise.allSettled is the better tool.",
+    "detailedExplanation": "Situation: I was writing tests in Chrona with Vitest.\r\nProblem: The test run failed with an \"unhandled rejection\" error even though the assertions looked\r\ncorrect. The test used Promise.all with several promises that could reject.\r\nInvestigation: Promise.all rejects as soon as the first promise rejects. Any other promise that rejects\r\nlater still has no handler attached, so Node reports an unhandled rejection, and Vitest fails the run.\r\nAction: I changed the test so every promise had its rejection handled, for example by using\r\nPromise.allSettled or by attaching handlers before the combined call.\r\nResult: The test became stable and the run passed.\r\nLearning: Promise.all handles only the first failure. When I need to observe every outcome,\r\nPromise.allSettled is the better tool.",
+    "coachingTip": "Say only what you really did. Ensure spoken answers match your code and resume.",
+    "codeSnippet": null,
+    "followUps": [
+      {
+        "question": "What is the difference between Promise.all and Promise.allSettled?",
+        "answer": "Promise.all fails fast on the first rejection. Promise.allSettled waits for every promise and returns a result for each one, so nothing is left unhandled."
+      }
+    ],
+    "keyTakeaway": "testing skills and understanding of Promise behaviour. Your answer",
+    "projectTag": "Chrona • MySQL Deadlock in Batch Approvals"
+  },
+  {
+    "id": 49,
+    "phaseId": 2,
+    "phaseTitle": "Phase 2: Project Deep Dives",
+    "question": "Have you ever encountered a circular dependency issue in your architecture or HTTP interceptors? How did you isolate and resolve it?",
+    "difficulty": "Senior/Lead",
+    "directPitch": "midnight-shift hours and the duplicate check. What the interviewer is evaluating: attention to detail with edge cases. Use only the bugs you really fixed, and describe them in your own words. Your answer Two examples come to mind. The first was a midnight-shift hours problem. When a shift starts at ...",
+    "spokenAnswer": "midnight-shift hours and the duplicate check.\nWhat the interviewer is evaluating: attention to detail with edge cases. Use only the bugs you really fixed, and\ndescribe them in your own words.\nYour answer\nTwo examples come to mind.\nThe first was a midnight-shift hours problem. When a shift starts at night and ends after midnight, a\nsimple \"end minus start\" calculation gives the wrong number, because the end time looks earlier than the\nstart time. The fix is to treat the end time as belonging to the next day when it is earlier than the start.\nThe second was a wage-agreement duplicate problem (ticket DOTS-50). The duplicate check was\ntreating a record as a duplicate of itself, for example when a user edited an existing agreement. The fix is",
+    "detailedExplanation": "midnight-shift hours and the duplicate check.\nWhat the interviewer is evaluating: attention to detail with edge cases. Use only the bugs you really fixed, and\ndescribe them in your own words.\nYour answer\nTwo examples come to mind.\nThe first was a midnight-shift hours problem. When a shift starts at night and ends after midnight, a\nsimple \"end minus start\" calculation gives the wrong number, because the end time looks earlier than the\nstart time. The fix is to treat the end time as belonging to the next day when it is earlier than the start.\nThe second was a wage-agreement duplicate problem (ticket DOTS-50). The duplicate check was\ntreating a record as a duplicate of itself, for example when a user edited an existing agreement. The fix is",
+    "coachingTip": "Say only what you really did. Ensure spoken answers match your code and resume.",
+    "codeSnippet": null,
+    "followUps": [
+      {
+        "question": "How did you verify this in production?",
+        "answer": "I verified it through staging tests, monitored application telemetry, and confirmed error rates remained at zero."
+      }
+    ],
+    "keyTakeaway": "attention to detail with edge cases. Use only the bugs you really fixed, and describe them in your own words.",
+    "projectTag": "Chrona • Axios 401 Interceptor Dynamic Import"
+  },
+  {
+    "id": 50,
+    "phaseId": 2,
+    "phaseTitle": "Phase 2: Project Deep Dives",
+    "question": "Tell me about a difficult database bug or stored procedure issue you diagnosed in production.",
+    "difficulty": "Senior/Lead",
+    "directPitch": "What the interviewer is evaluating: database debugging skills and how you prevent infinite loops. Your answer Situation: In LesHub, invoice numbers are generated by a stored procedure. Problem: In some cases the procedure got stuck in an infinite loop, so the request never finished and the database ...",
+    "spokenAnswer": "What the interviewer is evaluating: database debugging skills and how you prevent infinite loops.\nYour answer\nSituation: In LesHub, invoice numbers are generated by a stored procedure.\nProblem: In some cases the procedure got stuck in an infinite loop, so the request never finished and the\ndatabase kept working.\nInvestigation: I reproduced the case with the data that triggered it, read the procedure, and checked the\nloop condition. The condition was not moving toward its exit in that case.\nAction: I fixed the loop so it always makes progress, and I made sure it has a safe way to stop.\nResult: Invoice creation worked again for those cases.\nLearning: Every loop needs a clear exit condition, and database code should be tested with unusual",
+    "detailedExplanation": "What the interviewer is evaluating: database debugging skills and how you prevent infinite loops.\nYour answer\nSituation: In LesHub, invoice numbers are generated by a stored procedure.\nProblem: In some cases the procedure got stuck in an infinite loop, so the request never finished and the\ndatabase kept working.\nInvestigation: I reproduced the case with the data that triggered it, read the procedure, and checked the\nloop condition. The condition was not moving toward its exit in that case.\nAction: I fixed the loop so it always makes progress, and I made sure it has a safe way to stop.\nResult: Invoice creation worked again for those cases.\nLearning: Every loop needs a clear exit condition, and database code should be tested with unusual",
+    "coachingTip": "Say only what you really did. Ensure spoken answers match your code and resume.",
+    "codeSnippet": null,
+    "followUps": [
+      {
+        "question": "How did you verify this in production?",
+        "answer": "I verified it through staging tests, monitored application telemetry, and confirmed error rates remained at zero."
+      }
+    ],
+    "keyTakeaway": "database debugging skills and how you prevent infinite loops. Your answer",
+    "projectTag": "LesHub • Invoice Stored Procedure Infinite Loop"
+  },
+  {
+    "id": 51,
+    "phaseId": 2,
+    "phaseTitle": "Phase 2: Project Deep Dives",
+    "question": "How did you create deterministic avatar colours (the cyrb53 hash)?",
+    "difficulty": "Senior/Lead",
+    "directPitch": "Situation: Users in LesHub have avatars, and many do not upload a picture. Problem: We wanted each person to always get the same colour, without storing a colour in the database. Action: I used a string hash function (cyrb53) on the person's name to get a number, then turned that number into a hue i...",
+    "spokenAnswer": "Situation: Users in LesHub have avatars, and many do not upload a picture.\r\nProblem: We wanted each person to always get the same colour, without storing a colour in the\r\ndatabase.\r\nAction: I used a string hash function (cyrb53) on the person's name to get a number, then turned that\r\nnumber into a hue in the HSL colour model. The same name always gives the same number, so it always\r\ngives the same colour. I used HSL so I could keep saturation and lightness fixed, which keeps the\r\ncolours consistent and readable.\r\nResult: Avatars have stable, pleasant colours with no extra data stored.\r\nLearning: A pure function (same input, same output) can replace stored data when the result can be\r\ncalculated.\r\n// idea only: same name -> same hue\r\nfunction hueFromName(name) {\r\n const h = hash(name); // cyrb53 returns a number\r\n return h % 360; // 0-359 degrees\r\n}\r\nconst color = `hsl(${hueFromName(\"Sameer\")}, 65%, 45%)`;",
+    "detailedExplanation": "Situation: Users in LesHub have avatars, and many do not upload a picture.\r\nProblem: We wanted each person to always get the same colour, without storing a colour in the\r\ndatabase.\r\nAction: I used a string hash function (cyrb53) on the person's name to get a number, then turned that\r\nnumber into a hue in the HSL colour model. The same name always gives the same number, so it always\r\ngives the same colour. I used HSL so I could keep saturation and lightness fixed, which keeps the\r\ncolours consistent and readable.\r\nResult: Avatars have stable, pleasant colours with no extra data stored.\r\nLearning: A pure function (same input, same output) can replace stored data when the result can be\r\ncalculated.\r\n// idea only: same name -> same hue\r\nfunction hueFromName(name) {\r\n const h = hash(name); // cyrb53 returns a number\r\n return h % 360; // 0-359 degrees\r\n}\r\nconst color = `hsl(${hueFromName(\"Sameer\")}, 65%, 45%)`;",
+    "coachingTip": "Say only what you really did. Ensure spoken answers match your code and resume.",
+    "codeSnippet": "function hueFromName(name) {\n  const h = cyrb53(name);\n  return h % 360;\n}\nconst color = `hsl(${hueFromName(\"Sameer\")}, 65%, 45%)`;",
+    "followUps": [
+      {
+        "question": "Is a hash like this secure?",
+        "answer": "No. It is a fast, non-cryptographic hash used only for spreading values evenly. It must never be used for passwords or security."
+      }
+    ],
+    "keyTakeaway": "creative problem solving with a small, clear algorithm. Your answer",
+    "projectTag": "LesHub • Express Middleware 404 Pipeline Bug"
+  },
+  {
+    "id": 52,
+    "phaseId": 2,
+    "phaseTitle": "Phase 2: Project Deep Dives",
+    "question": "Tell me about the notification performance fix with SWR.",
+    "difficulty": "Senior/Lead",
+    "directPitch": "Situation: LesHub has a notification area that shows new items. Problem: The notification system had a performance issue caused by a location-based polling pattern, which means it kept fetching again based on route or location changes. Action: I replaced that pattern with SWR. SWR gives caching, de-...",
+    "spokenAnswer": "Situation: LesHub has a notification area that shows new items.\r\nProblem: The notification system had a performance issue caused by a location-based polling pattern,\r\nwhich means it kept fetching again based on route or location changes.\r\nAction: I replaced that pattern with SWR. SWR gives caching, de-duplicates identical requests, and\r\nrevalidates in a controlled way, for example when the window regains focus or on a set interval.\r\nResult: Fewer unnecessary requests and a smoother app.\r\nLearning: Before changing the UI, look for repeated or unnecessary network requests.",
+    "detailedExplanation": "Situation: LesHub has a notification area that shows new items.\r\nProblem: The notification system had a performance issue caused by a location-based polling pattern,\r\nwhich means it kept fetching again based on route or location changes.\r\nAction: I replaced that pattern with SWR. SWR gives caching, de-duplicates identical requests, and\r\nrevalidates in a controlled way, for example when the window regains focus or on a set interval.\r\nResult: Fewer unnecessary requests and a smoother app.\r\nLearning: Before changing the UI, look for repeated or unnecessary network requests.",
+    "coachingTip": "Say only what you really did. Ensure spoken answers match your code and resume.",
+    "codeSnippet": null,
+    "followUps": [
+      {
+        "question": "Why SWR instead of useEffect with fetch?",
+        "answer": "A plain useEffect fetch has no cache, no de-duplication, and no retry or revalidation, so each component repeats the work. SWR provides those features out of the box."
+      }
+    ],
+    "keyTakeaway": "data-fetching knowledge and performance thinking. Your answer",
+    "projectTag": "Portfolio • Stale SWR Cache Invalidation"
+  },
+  {
+    "id": 53,
+    "phaseId": 2,
+    "phaseTitle": "Phase 2: Project Deep Dives",
+    "question": "Tell me about the upload 404 bug caused by middleware order.",
+    "difficulty": "Senior/Lead",
+    "directPitch": "What the interviewer is evaluating: Express request flow knowledge. Your answer Situation: In LesHub, file uploads started returning 404 errors. Problem: The upload route was correct, but the 404 came from somewhere earlier in the request pipeline. Investigation: In Express, middleware runs in the o...",
+    "spokenAnswer": "What the interviewer is evaluating: Express request flow knowledge.\nYour answer\nSituation: In LesHub, file uploads started returning 404 errors.\nProblem: The upload route was correct, but the 404 came from somewhere earlier in the request\npipeline.\nInvestigation: In Express, middleware runs in the order it is registered. I checked the order and found a\nmiddleware that was registered before the upload handling, so the request did not reach it as expected.\nAction: I fixed the registration order.\nResult: Uploads worked again.\nLearning: In Express, order is behaviour. Body parsers, static handlers, authentication, routes, and the",
+    "detailedExplanation": "What the interviewer is evaluating: Express request flow knowledge.\nYour answer\nSituation: In LesHub, file uploads started returning 404 errors.\nProblem: The upload route was correct, but the 404 came from somewhere earlier in the request\npipeline.\nInvestigation: In Express, middleware runs in the order it is registered. I checked the order and found a\nmiddleware that was registered before the upload handling, so the request did not reach it as expected.\nAction: I fixed the registration order.\nResult: Uploads worked again.\nLearning: In Express, order is behaviour. Body parsers, static handlers, authentication, routes, and the",
+    "coachingTip": "Say only what you really did. Ensure spoken answers match your code and resume.",
+    "codeSnippet": "app.use(cors());\napp.use(express.json());\napp.use(\"/api\", routes); // routes after parsers\napp.use(notFoundHandler); // 404 after routes\napp.use(errorHandler); // centralized error handler last",
+    "followUps": [
+      {
+        "question": "How did you verify this in production?",
+        "answer": "I verified it through staging tests, monitored application telemetry, and confirmed error rates remained at zero."
+      }
+    ],
+    "keyTakeaway": "Express request flow knowledge. Your answer",
+    "projectTag": "Chrona • Mobile Safari 100vh Viewport Overflow"
+  },
+  {
+    "id": 54,
+    "phaseId": 2,
+    "phaseTitle": "Phase 2: Project Deep Dives",
+    "question": "How did you handle number and date formats for a Dutch (nl-NL)",
+    "difficulty": "Senior/Lead",
+    "directPitch": "locale? What the interviewer is evaluating: internationalisation awareness, which matters for money and dates in finance. Your answer Situation: LesHub is used with Dutch locale settings. Problem: Numbers and dates were showing in a format that did not match nl-NL. In Dutch, the decimal separator is...",
+    "spokenAnswer": "locale?\nWhat the interviewer is evaluating: internationalisation awareness, which matters for money and dates in finance.\nYour answer\nSituation: LesHub is used with Dutch locale settings.\nProblem: Numbers and dates were showing in a format that did not match nl-NL. In Dutch, the decimal\nseparator is a comma and the thousands separator is a dot, which is the opposite of US formatting.\nAction: I fixed the formatting across the frontend using the browser's Intl APIs with the nl-NL locale,\ninstead of building strings by hand.\nResult: Amounts and dates looked right for Dutch users.\nLearning: Never format money or dates by hand. Use Intl.NumberFormat and Intl.DateTimeFormat,",
+    "detailedExplanation": "locale?\nWhat the interviewer is evaluating: internationalisation awareness, which matters for money and dates in finance.\nYour answer\nSituation: LesHub is used with Dutch locale settings.\nProblem: Numbers and dates were showing in a format that did not match nl-NL. In Dutch, the decimal\nseparator is a comma and the thousands separator is a dot, which is the opposite of US formatting.\nAction: I fixed the formatting across the frontend using the browser's Intl APIs with the nl-NL locale,\ninstead of building strings by hand.\nResult: Amounts and dates looked right for Dutch users.\nLearning: Never format money or dates by hand. Use Intl.NumberFormat and Intl.DateTimeFormat,",
+    "coachingTip": "Say only what you really did. Ensure spoken answers match your code and resume.",
+    "codeSnippet": "new Intl.NumberFormat(\"nl-NL\", { style: \"currency\", currency: \"EUR\" }).format(1234.5);\n// \"EUR 1.234,50\" style output, formatted for Dutch users",
+    "followUps": [
+      {
+        "question": "How did you verify this in production?",
+        "answer": "I verified it through staging tests, monitored application telemetry, and confirmed error rates remained at zero."
+      }
+    ],
+    "keyTakeaway": "internationalisation awareness, which matters for money and dates in finance. Your answer",
+    "projectTag": "Chrona • Date-fns UTC Timezone Shift"
+  },
+  {
+    "id": 55,
+    "phaseId": 2,
+    "phaseTitle": "Phase 2: Project Deep Dives",
+    "question": "Tell me about debugging the stale overlay click bug and the sidebar",
+    "difficulty": "Senior/Lead",
+    "directPitch": "highlight bug. What the interviewer is evaluating: UI debugging approach. Use these as examples of how you debug, with your real details added. Your answer I'll give two short examples. On mobile, clicks stopped working on part of a screen. I inspected the element under the finger with the browser d...",
+    "spokenAnswer": "highlight bug.\nWhat the interviewer is evaluating: UI debugging approach. Use these as examples of how you debug, with your\nreal details added.\nYour answer\nI'll give two short examples.\nOn mobile, clicks stopped working on part of a screen. I inspected the element under the finger with the\nbrowser dev tools and found a leftover overlay element that was still covering the page and intercepting\nclicks. Removing the stale element, and making sure it was unmounted when it should be, fixed it.\nIn the sidebar, the active menu item was not highlighted for child and sub-child pages. The check was too\nstrict, matching only the exact route. Matching by route prefix, so a child page keeps its parent",
+    "detailedExplanation": "highlight bug.\nWhat the interviewer is evaluating: UI debugging approach. Use these as examples of how you debug, with your\nreal details added.\nYour answer\nI'll give two short examples.\nOn mobile, clicks stopped working on part of a screen. I inspected the element under the finger with the\nbrowser dev tools and found a leftover overlay element that was still covering the page and intercepting\nclicks. Removing the stale element, and making sure it was unmounted when it should be, fixed it.\nIn the sidebar, the active menu item was not highlighted for child and sub-child pages. The check was too\nstrict, matching only the exact route. Matching by route prefix, so a child page keeps its parent",
+    "coachingTip": "Say only what you really did. Ensure spoken answers match your code and resume.",
+    "codeSnippet": null,
+    "followUps": [
+      {
+        "question": "How did you verify this in production?",
+        "answer": "I verified it through staging tests, monitored application telemetry, and confirmed error rates remained at zero."
+      }
+    ],
+    "keyTakeaway": "UI debugging approach. Use these as examples of how you debug, with your real details added.",
+    "projectTag": "LesHub • Redux Toolkit Immer State Mutation"
+  },
+  {
+    "id": 58,
+    "phaseId": 2,
+    "phaseTitle": "Phase 2: Project Deep Dives",
+    "question": "Why did you use a monorepo (Turborepo) for the Portfolio Platform?",
+    "difficulty": "Senior/Lead",
+    "directPitch": "What the interviewer is evaluating: architecture choices and awareness of trade-offs. Your answer The Portfolio Platform has several apps: the public Next.js site, an admin app, and a NestJS API gateway. I used a Turborepo monorepo, so they live in one repository. The benefits are shared code and ty...",
+    "spokenAnswer": "What the interviewer is evaluating: architecture choices and awareness of trade-offs.\nYour answer\nThe Portfolio Platform has several apps: the public Next.js site, an admin app, and a NestJS API\ngateway. I used a Turborepo monorepo, so they live in one repository.\nThe benefits are shared code and types between apps, one place to change a shared contract, and\nfaster builds because Turborepo caches work that has not changed.\nThe trade-offs are a more complex setup, a larger repository, and the need for clear boundaries so apps\ndo not depend on each other's internals. For a single small app, I would not use a monorepo.",
+    "detailedExplanation": "What the interviewer is evaluating: architecture choices and awareness of trade-offs.\nYour answer\nThe Portfolio Platform has several apps: the public Next.js site, an admin app, and a NestJS API\ngateway. I used a Turborepo monorepo, so they live in one repository.\nThe benefits are shared code and types between apps, one place to change a shared contract, and\nfaster builds because Turborepo caches work that has not changed.\nThe trade-offs are a more complex setup, a larger repository, and the need for clear boundaries so apps\ndo not depend on each other's internals. For a single small app, I would not use a monorepo.",
+    "coachingTip": "Say only what you really did. Ensure spoken answers match your code and resume.",
+    "codeSnippet": null,
+    "followUps": [
+      {
+        "question": "How did you verify this in production?",
+        "answer": "I verified it through staging tests, monitored application telemetry, and confirmed error rates remained at zero."
+      }
+    ],
+    "keyTakeaway": "architecture choices and awareness of trade-offs. Your answer",
+    "projectTag": "Portfolio • Turborepo Monorepo Justification"
+  },
+  {
+    "id": 59,
+    "phaseId": 2,
+    "phaseTitle": "Phase 2: Project Deep Dives",
+    "question": "How did you set up the Google Calendar OAuth refresh token?",
+    "difficulty": "Senior/Lead",
+    "directPitch": "What the interviewer is evaluating: OAuth understanding in a real flow. Your answer The backend needs to create calendar events at any time, even when I am not logged in. To allow that, Google OAuth gives a refresh token for offline access. I ran a one-time command-line script that opens Google's co...",
+    "spokenAnswer": "What the interviewer is evaluating: OAuth understanding in a real flow.\nYour answer\nThe backend needs to create calendar events at any time, even when I am not logged in. To allow that,\nGoogle OAuth gives a refresh token for offline access.\nI ran a one-time command-line script that opens Google's consent screen, I approved it once, and the\nscript printed the refresh token. I store that token as a server secret. Later, the backend exchanges the\nrefresh token for short-lived access tokens whenever it calls the Calendar API.\nThe key points are that the refresh token never goes to the browser, I request only the permissions I\nneed, and if it is ever exposed I can revoke it and create a new one.",
+    "detailedExplanation": "What the interviewer is evaluating: OAuth understanding in a real flow.\nYour answer\nThe backend needs to create calendar events at any time, even when I am not logged in. To allow that,\nGoogle OAuth gives a refresh token for offline access.\nI ran a one-time command-line script that opens Google's consent screen, I approved it once, and the\nscript printed the refresh token. I store that token as a server secret. Later, the backend exchanges the\nrefresh token for short-lived access tokens whenever it calls the Calendar API.\nThe key points are that the refresh token never goes to the browser, I request only the permissions I\nneed, and if it is ever exposed I can revoke it and create a new one.",
+    "coachingTip": "Say only what you really did. Ensure spoken answers match your code and resume.",
+    "codeSnippet": null,
+    "followUps": [
+      {
+        "question": "How did you verify this in production?",
+        "answer": "I verified it through staging tests, monitored application telemetry, and confirmed error rates remained at zero."
+      }
+    ],
+    "keyTakeaway": "OAuth understanding in a real flow. Your answer",
+    "projectTag": "Chrona • Docker Healthcheck Stalled Container"
+  },
+  {
+    "id": 62,
+    "phaseId": 2,
+    "phaseTitle": "Phase 2: Project Deep Dives",
+    "question": "How do you understand an unfamiliar codebase before implementing a",
+    "difficulty": "Senior/Lead",
+    "directPitch": "I begin by understanding the application's structure, framework conventions, and existing patterns. I identify the relevant page or component, the API it calls, the backend controller and service, and the database entities or queries involved. I also inspect related features to understand how authen...",
+    "spokenAnswer": "I begin by understanding the application's structure, framework conventions, and existing patterns. I\r\nidentify the relevant page or component, the API it calls, the backend controller and service, and the\r\ndatabase entities or queries involved.\r\nI also inspect related features to understand how authentication, validation, errors, state management,\r\nand permissions are handled.\r\nFor a Next.js and NestJS application, I might trace a user action from the page through the API client,\r\ncontroller, service, repository or query, and finally back through the response-handling flow.\r\nI run the relevant application and reproduce the current behaviour before changing anything. That gives\r\nme a baseline and helps me avoid implementing a duplicate solution or breaking an existing contract.",
+    "detailedExplanation": "I begin by understanding the application's structure, framework conventions, and existing patterns. I\r\nidentify the relevant page or component, the API it calls, the backend controller and service, and the\r\ndatabase entities or queries involved.\r\nI also inspect related features to understand how authentication, validation, errors, state management,\r\nand permissions are handled.\r\nFor a Next.js and NestJS application, I might trace a user action from the page through the API client,\r\ncontroller, service, repository or query, and finally back through the response-handling flow.\r\nI run the relevant application and reproduce the current behaviour before changing anything. That gives\r\nme a baseline and helps me avoid implementing a duplicate solution or breaking an existing contract.",
+    "coachingTip": "Say only what you really did. Ensure spoken answers match your code and resume.",
+    "codeSnippet": null,
+    "followUps": [
+      {
+        "question": "What if the documentation is missing? How do you find where an API is called?",
+        "answer": "I use targeted code searches, route definitions, component references, API client methods, logs, browser Network tools, and database queries. I narrow the investigation to the smallest reproducible path instead of reading the entire codebase without direction."
+      }
+    ],
+    "keyTakeaway": "how quickly and safely you become productive in a new system. Your answer",
+    "projectTag": "Portfolio • Redis Distributed Rate Limiter"
+  },
+  {
+    "id": 63,
+    "phaseId": 2,
+    "phaseTitle": "Phase 2: Project Deep Dives",
+    "question": "How do you decide whether business logic belongs in the frontend,",
+    "difficulty": "Senior/Lead",
+    "directPitch": "I consider responsibility, security, consistency, and performance. The frontend should handle presentation, user interactions, immediate feedback, and client-side validation for usability. The backend should enforce business rules, authorization, request validation, and application workflows because...",
+    "spokenAnswer": "I consider responsibility, security, consistency, and performance.\r\nThe frontend should handle presentation, user interactions, immediate feedback, and client-side\r\nvalidation for usability. The backend should enforce business rules, authorization, request validation, and\r\napplication workflows because clients cannot be trusted to enforce those rules. The database should\r\nmaintain data integrity through appropriate constraints and execute data-intensive operations efficiently.\r\nFor example, in an online checkout, the frontend can show a price estimate and check required fields.\r\nThe backend should recalculate the price, verify the user's permission, and validate the order. The\r\ndatabase can enforce unique order numbers and run related changes in a transaction.\r\nI avoid relying on frontend checks alone for security or critical business rules.",
+    "detailedExplanation": "I consider responsibility, security, consistency, and performance.\r\nThe frontend should handle presentation, user interactions, immediate feedback, and client-side\r\nvalidation for usability. The backend should enforce business rules, authorization, request validation, and\r\napplication workflows because clients cannot be trusted to enforce those rules. The database should\r\nmaintain data integrity through appropriate constraints and execute data-intensive operations efficiently.\r\nFor example, in an online checkout, the frontend can show a price estimate and check required fields.\r\nThe backend should recalculate the price, verify the user's permission, and validate the order. The\r\ndatabase can enforce unique order numbers and run related changes in a transaction.\r\nI avoid relying on frontend checks alone for security or critical business rules.",
+    "coachingTip": "Say only what you really did. Ensure spoken answers match your code and resume.",
+    "codeSnippet": null,
+    "followUps": [
+      {
+        "question": "What if frontend and backend validation differ? Why use a stored procedure? When",
+        "answer": "would you avoid putting logic in the database? I try to keep the rules consistent and make the backend authoritative. Stored procedures are useful when bulk data processing benefits from set-based database operations, but I wouldn't move all business logic into stored procedures because that can make application logic harder to test and maintain."
+      }
+    ],
+    "keyTakeaway": "separation of responsibilities, security, and performance judgement. Your answer",
+    "projectTag": "LesHub • PDF Invoice Font Embedding"
+  },
+  {
+    "id": 64,
+    "phaseId": 2,
+    "phaseTitle": "Phase 2: Project Deep Dives",
+    "question": "How do you debug a production issue that you cannot reproduce",
+    "difficulty": "Senior/Lead",
+    "directPitch": "To debug unreproducible production issues: collect structured logs and Sentry traces using correlation IDs, audit environment and data differences, replay sanitized payloads in staging, isolate concurrency or type-coercion edge cases, implement a regression-tested fix, and run audited reconciliation for affected data.",
+    "spokenAnswer": "When a production issue cannot be reproduced locally, I follow an evidence-based debugging sequence:\n\n1. Gather Telemetry & Environmental Evidence:\nI examine production logs (CloudWatch/Pino) using the user's request correlation ID, inspect Sentry stack traces, and review the exact timestamps. I verify environmental differences: environment variables, database versions, cookie domain scopes, and feature flags.\n\n2. Check Data & Concurrency Variations:\nProduction bugs often arise from unexpected data shapes or concurrency. For example, in LesHub, an HTML number input was returning a string value. In local development with step=1, it appeared to work; but with unusual decimal steps, string concatenation ('2' + 1 = '21') triggered an unbounded loop. Testing with production-equivalent data revealed the issue immediately.\n\n3. Reproduce with Exact Payload in Staging:\nI extract the sanitized request payload from production telemetry and replay it against an isolated staging environment with logging enabled.\n\n4. Formulate Hypothesis & Smallest Reversible Fix:\nOnce the root cause is isolated, I implement the smallest targeted fix, add regression tests covering the failure case, and deploy with active monitoring.\n\n5. Protect Customer Data:\nIf the bug affected financial balances or records (like the LesHub quote-to-invoice date issue), I write an audited data migration script inside a transaction to reconcile affected records.",
+    "detailedExplanation": "I begin by collecting evidence rather than immediately changing code. I examine the reported steps,\r\ntimestamps, environment differences, relevant application logs, request and response details, and any\r\navailable error traces.\r\nThen I compare production configuration with the local environment, paying attention to authentication\r\ncookies, environment variables, API endpoints, database differences, and browser behaviour.\r\nI try to narrow the issue to a reproducible sequence or a specific difference. If the issue is intermittent, I\r\nlook for timing, concurrency, caching, or data-dependent behaviour.\r\nOnce I have a hypothesis, I test it with the smallest safe change and add regression coverage where\r\npossible. For a production system, I also consider the impact of the fix and how it can be rolled back if\r\nnecessary.\r\nFor example, in LesHub, uploaded files were returning 404 errors. The cause was the order in which\r\nmiddleware was registered, and fixing that order solved it. The lesson was to check the request pipeline\r\norder before blaming the handler.",
+    "coachingTip": "Cite a real bug where data differences caused a production failure: e.g. the rating-scale number string concatenation bug in LesHub, or the cookie domain mismatch in Chrona.",
+    "codeSnippet": null,
+    "followUps": [
+      {
+        "question": "Would you add logging directly in production? How do you protect sensitive data in",
+        "answer": "logs? I would add targeted, structured logging through the normal deployment process, avoiding passwords, raw tokens, payment credentials, and unnecessary personal data."
+      }
+    ],
+    "keyTakeaway": "calm, evidence-first debugging. Your answer",
+    "projectTag": "Chrona • CSV Timesheet Export Memory Spike"
+  },
+  {
+    "id": 66,
+    "phaseId": 2,
+    "phaseTitle": "Phase 2: Project Deep Dives",
+    "question": "If you joined Foundation Finance, how would you implement a new",
+    "difficulty": "Senior/Lead",
+    "directPitch": "financing application feature end to end? What the interviewer is evaluating: whether you can transfer your skills to a finance setting while staying honest about your experience. Your answer I would start by understanding the business workflow, user roles, regulatory or compliance requirements, and...",
+    "spokenAnswer": "financing application feature end to end?\nWhat the interviewer is evaluating: whether you can transfer your skills to a finance setting while staying honest\nabout your experience.\nYour answer\nI would start by understanding the business workflow, user roles, regulatory or compliance requirements,\nand acceptance criteria. In a financing application, I would pay particular attention to sensitive customer\ninformation, data integrity, access control, auditability, and the correctness of financial calculations.\nI would then map the flow across the frontend, API, business services, database, and any external\nintegrations.\nOn the frontend, I would build the necessary forms and states, with client-side validation to provide",
+    "detailedExplanation": "financing application feature end to end?\nWhat the interviewer is evaluating: whether you can transfer your skills to a finance setting while staying honest\nabout your experience.\nYour answer\nI would start by understanding the business workflow, user roles, regulatory or compliance requirements,\nand acceptance criteria. In a financing application, I would pay particular attention to sensitive customer\ninformation, data integrity, access control, auditability, and the correctness of financial calculations.\nI would then map the flow across the frontend, API, business services, database, and any external\nintegrations.\nOn the frontend, I would build the necessary forms and states, with client-side validation to provide",
+    "coachingTip": "Say only what you really did. Ensure spoken answers match your code and resume.",
+    "codeSnippet": null,
+    "followUps": [
+      {
+        "question": "How did you verify this in production?",
+        "answer": "I verified it through staging tests, monitored application telemetry, and confirmed error rates remained at zero."
+      }
+    ],
+    "keyTakeaway": "whether you can transfer your skills to a finance setting while staying honest about your experience.",
+    "projectTag": "Portfolio • Redis Cache Invalidation Strategy"
+  }
+]

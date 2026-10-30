@@ -1,0 +1,296 @@
+[
+  {
+    "id": 16,
+    "topicId": 2,
+    "topicTitle": "2. Modules & CommonJS/ESM",
+    "question": "What is the difference between CommonJS (CJS) and ECMAScript Modules (ESM)?",
+    "answer": "CommonJS is Node's legacy module system using `require()` and `module.exports`. It loads modules synchronously at runtime. ESM (`import`/`export`) is the official ECMAScript standard. It is asynchronous, statically analyzable at compile/parse time (enabling tree-shaking), and uses top-level `await`.",
+    "memoryModel": "Memory Anchor: CJS = Synchronous runtime require(). ESM = Static compile-time import with tree-shaking & top-level await.",
+    "code": "// CommonJS (CJS)\nconst fs = require('fs');\nmodule.exports = { myFunction };\n\n// ES Modules (ESM)\nimport fs from 'node:fs';\nexport { myFunction };",
+    "comparisonTable": [
+      {
+        "aspect": "Loading Timing",
+        "detail": "CJS loads synchronously at runtime; ESM parses statically in phases (construction, instantiation, evaluation)."
+      },
+      {
+        "aspect": "Syntax",
+        "detail": "require() / module.exports vs import / export."
+      },
+      {
+        "aspect": "Top-level await",
+        "detail": "Supported natively in ESM; requires async wrapper in CJS."
+      },
+      {
+        "aspect": "Tree shaking",
+        "detail": "Supported in ESM due to static analysis; difficult in CJS."
+      }
+    ]
+  },
+  {
+    "id": 17,
+    "topicId": 2,
+    "topicTitle": "2. Modules & CommonJS/ESM",
+    "question": "How does Node.js resolve and cache required modules?",
+    "answer": "Node.js caches modules in `require.cache` by their resolved absolute file path after the first `require()`. Subsequent calls return the cached `exports` object without re-executing the module code. Modules are resolved in order: 1) Core modules (fs, path); 2) File or folder paths (./, ../); 3) `node_modules` walked upwards to the filesystem root.",
+    "memoryModel": "Memory Anchor: Resolved absolute path → Looked up in require.cache → If found return cached, else evaluate and cache.",
+    "code": "// Invalidate cache dynamically (e.g., hot-reloading mock data):\nconst modulePath = require.resolve('./config');\ndelete require.cache[modulePath];\nconst freshConfig = require('./config');"
+  },
+  {
+    "id": 18,
+    "topicId": 2,
+    "topicTitle": "2. Modules & CommonJS/ESM",
+    "question": "What is the difference between exports and module.exports in CommonJS?",
+    "answer": "`module.exports` is the actual object returned when another file requires the module. `exports` is merely a variable initialized to reference `module.exports` (`exports = module.exports = {}`).\nIf you reassign `exports = function() {}`, you break the reference to `module.exports` and nothing is exported! Always assign to `module.exports` if exporting a single class, function, or primitive.",
+    "memoryModel": "Memory Anchor: module.exports is the real master. exports is only a helper shortcut reference.",
+    "code": "// CORRECT:\nexports.add = (a, b) => a + b;\nexports.subtract = (a, b) => a - b;\n\n// OR replacing entire export:\nmodule.exports = class AuthService {};\n\n// INCORRECT (breaks reference!):\n// exports = class AuthService {}; // Exports remain empty object!"
+  },
+  {
+    "id": 19,
+    "topicId": 2,
+    "topicTitle": "2. Modules & CommonJS/ESM",
+    "question": "How does Node.js handle circular module dependencies in CommonJS?",
+    "answer": "When module A requires module B while B requires module A, Node does not deadlock. Instead, module B receives an **incomplete, partial copy** of module A's `exports` object as it was evaluated up to that point. Once both finish executing, the references are updated, but circular dependencies can cause undefined function calls if properties are accessed during initial module evaluation.",
+    "memoryModel": "Memory Anchor: Returns an incomplete copy of exports evaluated so far. Avoid circular dependencies by refactoring shared code into a third module.",
+    "code": "// a.js: const b = require('./b'); exports.done = false;\n// b.js: const a = require('./a'); console.log('a.done in b:', a.done);"
+  },
+  {
+    "id": 20,
+    "topicId": 2,
+    "topicTitle": "2. Modules & CommonJS/ESM",
+    "question": "How do you enable ECMAScript Modules (ESM) in a Node.js project?",
+    "answer": "Two standard methods:\n1) Add `\"type\": \"module\"` to `package.json`. All `.js` files in the project will be treated as ESM.\n2) Use the `.mjs` file extension for ESM files, or `.cjs` for explicit CommonJS files when `type: module` is active.",
+    "memoryModel": "Memory Anchor: \"type\": \"module\" in package.json OR use .mjs file extension."
+  },
+  {
+    "id": 21,
+    "topicId": 2,
+    "topicTitle": "2. Modules & CommonJS/ESM",
+    "question": "Why are __dirname and __filename missing in ESM, and how do you recreate them?",
+    "answer": "In ESM, `__dirname` and `__filename` are not defined because ESM modules are designed to run in both browser and server environments where file paths don't exist. Instead, ESM provides `import.meta.url`. You recreate them using `fileURLToPath` from the `node:url` module and `dirname` from `node:path`.",
+    "memoryModel": "Memory Anchor: Use import.meta.url + fileURLToPath + dirname to recreate __dirname in ESM.",
+    "code": "import { fileURLToPath } from 'node:url';\nimport { dirname, join } from 'node:path';\n\nconst __filename = fileURLToPath(import.meta.url);\nconst __dirname = dirname(__filename);\nconst filePath = join(__dirname, 'data.json');"
+  },
+  {
+    "id": 22,
+    "topicId": 2,
+    "topicTitle": "2. Modules & CommonJS/ESM",
+    "question": "Can you import CommonJS modules into ESM, and can you require() ESM modules into CommonJS?",
+    "answer": "1) ESM importing CJS: Fully supported via default import (`import express from 'express'`).\n2) CJS requiring ESM: Synchronous `require('./esm-file.mjs')` throws `ERR_REQUIRE_ESM`. In CJS, you must use dynamic `import('./esm-file.mjs')` which returns a Promise.",
+    "memoryModel": "Memory Anchor: ESM can import CJS easily. CJS can only load ESM via async dynamic import().",
+    "code": "// In CommonJS file:\nasync function loadESM() {\n  const { default: chalk } = await import('chalk');\n  console.log(chalk.green('Loaded ESM module in CommonJS!'));\n}"
+  },
+  {
+    "id": 23,
+    "topicId": 2,
+    "topicTitle": "2. Modules & CommonJS/ESM",
+    "question": "What is the Module Wrapper Function in CommonJS?",
+    "answer": "Before executing any CommonJS file, Node.js wraps the file content in an IIFE function wrapper:\n`(function (exports, require, module, __filename, __dirname) { ... your code ... });`\nThis gives each file its private scope (preventing global variable leakage) and injects the module-specific variables (`require`, `module`, `exports`, `__filename`, `__dirname`).",
+    "memoryModel": "Memory Anchor: (function (exports, require, module, __filename, __dirname) { your code })();"
+  },
+  {
+    "id": 24,
+    "topicId": 2,
+    "topicTitle": "2. Modules & CommonJS/ESM",
+    "question": "What is package-lock.json and why must it be committed to version control?",
+    "answer": "`package-lock.json` records the exact, deterministic dependency tree (exact versions, resolved registry URLs, and integrity SHA-512 hashes) of every package and transitive dependency installed. Committing it guarantees identical installations across development, staging, CI/CD, and production environments (`npm ci`), eliminating 'works on my machine' version drift.",
+    "memoryModel": "Memory Anchor: package-lock.json = Deterministic reproducible builds across all machines and CI/CD pipelines."
+  },
+  {
+    "id": 25,
+    "topicId": 2,
+    "topicTitle": "2. Modules & CommonJS/ESM",
+    "question": "What is the difference between npm install and npm ci?",
+    "answer": "`npm install` resolves versions from package.json and updates package-lock.json if ranges allow. `npm ci` (Clean Install) strictly validates package.json against package-lock.json, deletes the existing `node_modules`, and installs the exact locked versions without modifying package-lock.json. `npm ci` is faster and mandatory for production CI/CD.",
+    "memoryModel": "Memory Anchor: npm i = Local dev & updates lockfile. npm ci = Clean, fast, deterministic install for CI/CD.",
+    "comparisonTable": [
+      {
+        "aspect": "npm install",
+        "detail": "Can upgrade dependencies within caret (^) ranges; writes to package-lock.json."
+      },
+      {
+        "aspect": "npm ci",
+        "detail": "Deletes node_modules; enforces exact lockfile; fails if lockfile is out of sync."
+      }
+    ]
+  },
+  {
+    "id": 26,
+    "topicId": 2,
+    "topicTitle": "2. Modules & CommonJS/ESM",
+    "question": "What are peerDependencies in package.json?",
+    "answer": "`peerDependencies` specify that a package requires a specific version of a host dependency to be installed by the consuming application, rather than bundling its own copy. Commonly used for plugins (e.g. an Express middleware requires `express` as a peerDependency so they share the same Express singleton instance).",
+    "memoryModel": "Memory Anchor: Peer dependencies expect the host project to provide the shared dependency."
+  },
+  {
+    "id": 27,
+    "topicId": 2,
+    "topicTitle": "2. Modules & CommonJS/ESM",
+    "question": "What is the node: prefix in core module imports?",
+    "answer": "Starting in Node.js 16+, prefixing core modules with `node:` (`node:fs`, `node:path`, `node:crypto`, `node:http`) makes it explicit that a built-in Node.js module is being loaded, prevents shadowing conflicts with third-party npm packages of the same name, and speeds up module resolution.",
+    "memoryModel": "Memory Anchor: Always use node: prefix for core modules in modern Node.js."
+  },
+  {
+    "id": 28,
+    "topicId": 2,
+    "topicTitle": "2. Modules & CommonJS/ESM",
+    "question": "What is dynamic import() and when should it be used?",
+    "answer": "`import(specifier)` is a function-like syntax that returns a Promise resolving to the requested module. It allows conditional or on-demand module loading (e.g. loading a heavy PDF generation module only when the user requests an invoice export), reducing initial memory consumption and startup time.",
+    "memoryModel": "Memory Anchor: Dynamic import = Lazy-load heavy modules on demand inside async functions.",
+    "code": "app.get('/export-report', async (req, res) => {\n  const { generatePdfReport } = await import('./heavyPdfService.js');\n  const buffer = await generatePdfReport(req.query);\n  res.type('pdf').send(buffer);\n});"
+  },
+  {
+    "id": 29,
+    "topicId": 2,
+    "topicTitle": "2. Modules & CommonJS/ESM",
+    "question": "What is the exports field in package.json?",
+    "answer": "The `exports` field defines the official public entry points and subpath exports of a package, encapsulating internal private files from being accessed by consumers (`exports: { \".\": \"./index.js\", \"./utils\": \"./dist/utils.js\" }`). It can also provide conditional exports for ESM (`import`) vs CJS (`require`).",
+    "memoryModel": "Memory Anchor: exports field = Encapsulates package internals and specifies conditional CJS/ESM entry points."
+  },
+  {
+    "id": 30,
+    "topicId": 2,
+    "topicTitle": "2. Modules & CommonJS/ESM",
+    "question": "How do you inspect the module resolution path for a package?",
+    "answer": "Use `require.resolve(moduleName)`. It returns the exact absolute path of the file that would be loaded without actually executing or evaluating the module.",
+    "memoryModel": "Memory Anchor: require.resolve('lodash') returns the absolute path without executing it."
+  },
+  {
+    "id": 31,
+    "topicId": 3,
+    "topicTitle": "3. Buffers, Streams & Pipe",
+    "question": "What is a Buffer in Node.js, and why is it needed?",
+    "answer": "A Buffer represents a fixed-length chunk of raw binary memory allocated outside the V8 JavaScript heap (using C++ memory allocation). It is needed because pure JavaScript originally had no mechanism for manipulating binary byte streams (TCP packets, file reading, image processing). Buffers store 8-bit octets (values 0–255).",
+    "memoryModel": "Memory Anchor: Buffer = Raw binary memory allocated outside the V8 heap for binary data and I/O.",
+    "code": "const buf = Buffer.from('Hello, Senior SDE!');\nconsole.log(buf); // <Buffer 48 65 6c 6c 6f...>\nconsole.log(buf.toString('hex')); // Hex representation\nconsole.log(buf.toString('base64')); // Base64 encoding"
+  },
+  {
+    "id": 32,
+    "topicId": 3,
+    "topicTitle": "3. Buffers, Streams & Pipe",
+    "question": "What is the difference between Buffer.alloc() and Buffer.allocUnsafe()?",
+    "answer": "`Buffer.alloc(size)` allocates memory and initializes all bytes to zero (`0x00`). It is safe from memory leaks.\n`Buffer.allocUnsafe(size)` allocates memory without zeroing it out. It is significantly faster because it avoids writing zeros, but the buffer may contain residual, sensitive data (passwords, tokens) previously held in that memory segment. If using `allocUnsafe`, you must immediately overwrite all bytes.",
+    "memoryModel": "Memory Anchor: alloc = Safe, zeroed out. allocUnsafe = Ultra-fast, but contains uninitialized dirty memory.",
+    "comparisonTable": [
+      {
+        "aspect": "Buffer.alloc(size)",
+        "detail": "Zero-filled; safe; zero risk of leaking confidential memory."
+      },
+      {
+        "aspect": "Buffer.allocUnsafe(size)",
+        "detail": "Non-zeroed; faster; security risk if exposed directly without writing."
+      }
+    ]
+  },
+  {
+    "id": 33,
+    "topicId": 3,
+    "topicTitle": "3. Buffers, Streams & Pipe",
+    "question": "What are Streams in Node.js, and what are the 4 fundamental stream types?",
+    "answer": "Streams are collections of data that might not be available all at once and don't have to fit entirely into memory. They process data chunk-by-chunk.\nThe 4 types:\n1) `Readable`: Abstraction for a source from which data can be consumed (`fs.createReadStream`, HTTP `req`).\n2) `Writable`: Abstraction for a destination to which data can be written (`fs.createWriteStream`, HTTP `res`).\n3) `Duplex`: Stream that is both Readable and Writable (e.g. TCP `net.Socket`).\n4) `Transform`: A duplex stream where the output is computed from the input (e.g. `zlib.createGzip`, crypto cipher).",
+    "memoryModel": "Memory Anchor: 4 Streams = Readable (source), Writable (sink), Duplex (both), Transform (middleware filter)."
+  },
+  {
+    "id": 34,
+    "topicId": 3,
+    "topicTitle": "3. Buffers, Streams & Pipe",
+    "question": "Why is streaming essential when serving large files (e.g. 2 GB video) in Express?",
+    "answer": "Using `fs.readFile()` loads the entire 2 GB file into V8 heap memory before sending it. If 10 concurrent users request it, the server attempts to allocate 20 GB of RAM, causing memory exhaustion and crashes.\nStreaming (`fs.createReadStream().pipe(res)`) loads data in small, configurable chunks (default 64 KB), keeping memory usage constant (~few megabytes) regardless of whether the file is 10 MB or 100 GB.",
+    "memoryModel": "Memory Anchor: readFile = Loads entire file into RAM (crashes). createReadStream = Constant low memory footprint.",
+    "code": "// BAD: Loads 2GB into RAM\napp.get('/bad-download', (req, res) => {\n  fs.readFile('./huge-video.mp4', (err, data) => res.send(data));\n});\n\n// GOOD: Streams 64KB chunks to response\napp.get('/stream-download', (req, res) => {\n  const stream = fs.createReadStream('./huge-video.mp4');\n  res.setHeader('Content-Type', 'video/mp4');\n  stream.pipe(res);\n});"
+  },
+  {
+    "id": 35,
+    "topicId": 3,
+    "topicTitle": "3. Buffers, Streams & Pipe",
+    "question": "What is Backpressure in streams, and how is it handled?",
+    "answer": "Backpressure occurs when the data source (Readable stream) produces data faster than the destination (Writable stream) can process or write it (e.g. fast disk read vs slow 3G mobile client connection).\nWithout backpressure management, unwritten chunks pile up in memory buffer, eventually causing an out-of-memory crash. Node handles backpressure via `write() === false` and the `'drain'` event, or automatically using `.pipe()` / `pipeline()`.",
+    "memoryModel": "Memory Anchor: Backpressure = Producer faster than consumer. Solved by pausing readable stream until writable emits 'drain'.",
+    "code": "const canWrite = writable.write(chunk);\nif (!canWrite) {\n  readable.pause(); // Pause reading\n  writable.once('drain', () => readable.resume()); // Resume when buffer clears\n}"
+  },
+  {
+    "id": 36,
+    "topicId": 3,
+    "topicTitle": "3. Buffers, Streams & Pipe",
+    "question": "Why should you prefer stream.pipeline() over stream.pipe()?",
+    "answer": "`.pipe()` does not forward errors properly across a chain of streams (e.g. `source.pipe(transform).pipe(destination)`). If the middle stream throws an error, the source and destination streams remain open, leaking file descriptors and memory.\n`pipeline()` properly forwards errors from any stream in the pipeline, automatically cleans up and destroys all streams in the chain, and supports Promise syntax via `stream/promises`.",
+    "memoryModel": "Memory Anchor: pipe() leaks file descriptors on error. pipeline() guarantees cleanup of all streams on error.",
+    "code": "import { pipeline } from 'node:stream/promises';\nimport fs from 'node:fs';\nimport zlib from 'node:zlib';\n\nasync function compressFile(src, dest) {\n  await pipeline(\n    fs.createReadStream(src),\n    zlib.createGzip(),\n    fs.createWriteStream(dest)\n  );\n  console.log('Compression complete with zero leaks!');\n}"
+  },
+  {
+    "id": 37,
+    "topicId": 3,
+    "topicTitle": "3. Buffers, Streams & Pipe",
+    "question": "What is the difference between paused and flowing modes in Readable streams?",
+    "answer": "- Flowing Mode: Data is read from the underlying system automatically and provided as quickly as possible via the `'data'` event.\n- Paused Mode: The stream does not push data. You must explicitly call `stream.read()` to fetch chunks, usually inside a `'readable'` event listener.\nA stream starts in paused mode and switches to flowing mode when a `'data'` listener is attached or `.pipe()` is called.",
+    "memoryModel": "Memory Anchor: Paused = pull-based (stream.read()). Flowing = push-based ('data' events)."
+  },
+  {
+    "id": 38,
+    "topicId": 3,
+    "topicTitle": "3. Buffers, Streams & Pipe",
+    "question": "How do you convert a Buffer to a string, and what encodings are supported?",
+    "answer": "Call `buf.toString(encoding)`. Common encodings supported:\n- `'utf8'` (default for text)\n- `'hex'` (two hex characters per byte)\n- `'base64'` (Base64 encoding for binary transfer)\n- `'latin1'` / `'binary'`\n- `'ascii'`",
+    "memoryModel": "Memory Anchor: buf.toString('utf8' | 'hex' | 'base64')."
+  },
+  {
+    "id": 39,
+    "topicId": 3,
+    "topicTitle": "3. Buffers, Streams & Pipe",
+    "question": "What is highWaterMark in Node.js streams?",
+    "answer": "`highWaterMark` is the threshold size (in bytes) of the internal buffer before a stream stops reading from the underlying source or returns `false` on `write()`. For normal streams, the default is 16 KB (`16 * 1024`); for file streams (`fs.createReadStream`), the default is 64 KB (`64 * 1024`); for objectMode streams, it represents the count of objects (default 16).",
+    "memoryModel": "Memory Anchor: highWaterMark = Buffer capacity threshold (default 64KB for fs, 16KB for streams) that triggers backpressure."
+  },
+  {
+    "id": 40,
+    "topicId": 3,
+    "topicTitle": "3. Buffers, Streams & Pipe",
+    "question": "What is objectMode in Node.js streams?",
+    "answer": "By default, streams operate exclusively on `Buffer` and `string` chunks. Setting `{ objectMode: true }` allows streams to emit and consume arbitrary JavaScript objects (numbers, objects, arrays), enabling streaming data processing pipelines for JSON or database records.",
+    "memoryModel": "Memory Anchor: objectMode: true allows streaming JS objects instead of just binary Buffers.",
+    "code": "import { Transform } from 'node:stream';\n\nconst parseJsonStream = new Transform({\n  objectMode: true,\n  transform(chunk, encoding, callback) {\n    const obj = JSON.parse(chunk.toString());\n    this.push(obj);\n    callback();\n  }\n});"
+  },
+  {
+    "id": 41,
+    "topicId": 3,
+    "topicTitle": "3. Buffers, Streams & Pipe",
+    "question": "How do you implement a custom Transform stream?",
+    "answer": "Extend the `Transform` class or instantiate it with a `transform(chunk, encoding, callback)` method. Read the chunk, perform modification, emit output via `this.push(transformedChunk)`, and invoke `callback()` when ready for the next chunk.",
+    "memoryModel": "Memory Anchor: Implement transform(chunk, enc, cb) -> call this.push() -> call cb().",
+    "code": "import { Transform } from 'node:stream';\n\nconst upperCaseStream = new Transform({\n  transform(chunk, encoding, callback) {\n    this.push(chunk.toString().toUpperCase());\n    callback();\n  }\n});"
+  },
+  {
+    "id": 42,
+    "topicId": 3,
+    "topicTitle": "3. Buffers, Streams & Pipe",
+    "question": "What is Buffer.concat() and when should it be used?",
+    "answer": "`Buffer.concat(list, totalLength)` takes an array of Buffer objects and concatenates them into a single continuous Buffer. It is commonly used when accumulating chunks from a Readable stream before parsing complete data.",
+    "memoryModel": "Memory Anchor: Buffer.concat([chunk1, chunk2]) merges an array of chunks into one Buffer.",
+    "code": "const chunks = [];\nstream.on('data', chunk => chunks.push(chunk));\nstream.on('end', () => {\n  const completeBuffer = Buffer.concat(chunks);\n  console.log('Complete payload size:', completeBuffer.length);\n});"
+  },
+  {
+    "id": 43,
+    "topicId": 3,
+    "topicTitle": "3. Buffers, Streams & Pipe",
+    "question": "What happens if you concatenate Buffer chunks as strings using += ?",
+    "answer": "Concatenating chunks with `let str = ''; str += chunk;` can cause multi-byte character corruption! If a multi-byte UTF-8 character (e.g. an emoji or non-ASCII character) gets split across two 64KB chunk boundaries, converting the individual chunk to string replaces the half-character with the replacement character `` (U+FFFD).\nSolution: Collect Buffer chunks and use `Buffer.concat()`, or use `StringDecoder` from `node:string_decoder`.",
+    "memoryModel": "Memory Anchor: Never use += on stream chunks! Use StringDecoder or Buffer.concat to prevent splitting multi-byte UTF-8 characters.",
+    "code": "import { StringDecoder } from 'node:string_decoder';\nconst decoder = new StringDecoder('utf8');\nstream.on('data', (chunk) => {\n  const text = decoder.write(chunk); // Holds incomplete bytes until next chunk!\n});"
+  },
+  {
+    "id": 44,
+    "topicId": 3,
+    "topicTitle": "3. Buffers, Streams & Pipe",
+    "question": "How can you read a stream using async/await and for await...of?",
+    "answer": "In modern Node.js, Readable streams implement the AsyncIterable protocol. You can consume stream chunks sequentially using a `for await (const chunk of stream)` loop without manual event listeners.",
+    "memoryModel": "Memory Anchor: for await (const chunk of readableStream) provides clean async iteration over streams.",
+    "code": "async function processFile(filePath) {\n  const stream = fs.createReadStream(filePath, { encoding: 'utf8' });\n  for await (const chunk of stream) {\n    console.log('Received chunk of length:', chunk.length);\n  }\n  console.log('Stream finished!');\n}"
+  },
+  {
+    "id": 45,
+    "topicId": 3,
+    "topicTitle": "3. Buffers, Streams & Pipe",
+    "question": "How do you gracefully destroy a stream to cancel reading or writing?",
+    "answer": "Call `stream.destroy(error)`. It immediately closes the underlying resource (file descriptor or socket) and emits the `'close'` event (and `'error'` if an error parameter was supplied), ensuring memory is freed immediately.",
+    "memoryModel": "Memory Anchor: stream.destroy() closes underlying file descriptors and frees memory immediately."
+  }
+]

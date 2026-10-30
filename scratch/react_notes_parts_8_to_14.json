@@ -1,0 +1,264 @@
+[
+  {
+    "id": 8,
+    "title": "Part 8 — Context API & State Architecture",
+    "badge": "Context API",
+    "color": "#60a5fa",
+    "sections": [
+      {
+        "id": "8.1",
+        "title": "25. Context Creation, Providers & Custom Consumer Hooks",
+        "content": "### 1. Topic Overview & Problem Solved\nReact Context is designed to share data that can be considered \"global\" for a tree of components — such as the authenticated user, UI theme, active locale, or shared feature flags — without manually passing props down through every intermediate component (Prop Drilling).\n\n### 2. The Custom Hook Safety Pattern\nNever expose the raw Context object directly to components. Instead, always wrap `useContext(MyContext)` in a dedicated custom hook that asserts the hook is called within its Provider, throwing an explicit error if called outside.",
+        "code": "import { createContext, useContext, useState } from 'react';\n\n// 1. Create Context with null default\nconst AuthContext = createContext(null);\n\n// 2. Encapsulated Provider Component\nexport function AuthProvider({ children }) {\n  const [user, setUser] = useState(null);\n\n  const login = (userData) => setUser(userData);\n  const logout = () => setUser(null);\n\n  return (\n    <AuthContext.Provider value={{ user, isAuthenticated: Boolean(user), login, logout }}>\n      {children}\n    </AuthContext.Provider>\n  );\n}\n\n// 3. Fail-fast Custom Hook\nexport function useAuth() {\n  const context = useContext(AuthContext);\n  if (!context) {\n    throw new Error('useAuth must be consumed within an <AuthProvider> wrapper!');\n  }\n  return context;\n}",
+        "keyTakeaways": [
+          "Context solves prop drilling for broadly shared application values (auth, theme, locale).",
+          "Always wrap useContext in a custom hook that throws an informative error when used outside its Provider.",
+          "Context is not a replacement for high-velocity global state management."
+        ]
+      },
+      {
+        "id": "8.2",
+        "title": "26. Context Re-render Cascade & Context Splitting",
+        "content": "### 1. The Context Re-render Hazard\nBy default, whenever the `value` prop passed to a `<Context.Provider>` changes by reference, **EVERY component that calls `useContext(MyContext)` will immediately re-render**, even if it only uses an unchanged property of that value object!\n`React.memo` cannot prevent this re-render because context subscriptions bypass memoization boundaries!\n\n### 2. Architectural Solution: Split State and Dispatch Contexts\nSplit your context into two separate contexts:\n- `StateContext`: Holds only the data values (changes frequently).\n- `DispatchContext`: Holds stable action callbacks (never changes).\nComponents that only trigger actions (like buttons) subscribe only to `DispatchContext` and NEVER re-render when state updates!",
+        "code": "import { createContext, useContext, useReducer, useMemo } from 'react';\n\nconst CartStateContext = createContext(null);\nconst CartDispatchContext = createContext(null);\n\nfunction cartReducer(state, action) {\n  switch (action.type) {\n    case 'ADD_ITEM': return [...state, action.payload];\n    case 'CLEAR': return [];\n    default: return state;\n  }\n}\n\nexport function CartProvider({ children }) {\n  const [cart, dispatch] = useReducer(cartReducer, []);\n\n  return (\n    <CartStateContext.Provider value={cart}>\n      <CartDispatchContext.Provider value={dispatch}>\n        {children}\n      </CartDispatchContext.Provider>\n    </CartStateContext.Provider>\n  );\n}\n\n// Consumers only re-render when their specific subscription changes:\nexport const useCart = () => useContext(CartStateContext);\nexport const useCartDispatch = () => useContext(CartDispatchContext);",
+        "comparisonTable": [
+          {
+            "aspect": "Monolithic Context",
+            "detail": "Single object with state and methods; any state change causes all consumers to re-render."
+          },
+          {
+            "aspect": "Split Contexts",
+            "detail": "Separates state from dispatch; action callers do not re-render when state values update."
+          }
+        ],
+        "keyTakeaways": [
+          "useContext subscriptions bypass React.memo and force consumer re-renders on every value reference change.",
+          "Splitting state and dispatch into separate contexts stops action callers from re-rendering.",
+          "For complex, high-frequency state, choose Zustand or Redux Toolkit with atomic selector subscriptions."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 9,
+    "title": "Part 9 — Reducers & Complex State with useReducer",
+    "badge": "Reducers",
+    "color": "#818cf8",
+    "sections": [
+      {
+        "id": "9.1",
+        "title": "27. useReducer Architecture & State Machines",
+        "content": "### 1. When to Choose useReducer over useState\n- Next state depends on multiple sub-values or prior states.\n- Complex state transitions (e.g. form wizard, audio player, checkout funnel).\n- Business logic needs to be tested in isolation as a pure JavaScript function without rendering components.\n\n### 2. State-Machine Thinking: Eliminating Impossible States\nWith multiple `useState` hooks (`isLoading`, `isError`, `isSuccess`), you can accidentally end up in an impossible state: `isLoading === true && isError === true`.\nA reducer enforces valid state transitions via discriminated unions.",
+        "code": "// Pure reducer: (state, action) => newState\nexport const initialState = { status: 'idle', data: null, error: null };\n\nexport function fetchReducer(state, action) {\n  switch (action.type) {\n    case 'FETCH_INIT':\n      return { status: 'loading', data: null, error: null };\n    case 'FETCH_SUCCESS':\n      return { status: 'success', data: action.payload, error: null };\n    case 'FETCH_FAILURE':\n      return { status: 'error', data: null, error: action.payload };\n    default:\n      throw new Error(`Unhandled action type: ${action.type}`);\n  }\n}\n\n// Inside component:\nfunction DataViewer() {\n  const [state, dispatch] = useReducer(fetchReducer, initialState);\n\n  async function loadData() {\n    dispatch({ type: 'FETCH_INIT' });\n    try {\n      const res = await fetch('/api/metrics');\n      const data = await res.json();\n      dispatch({ type: 'FETCH_SUCCESS', payload: data });\n    } catch (err) {\n      dispatch({ type: 'FETCH_FAILURE', payload: err.message });\n    }\n  }\n\n  return (\n    <div>\n      {state.status === 'loading' && <p>Loading...</p>}\n      {state.status === 'error' && <p className=\"error\">{state.error}</p>}\n      {state.status === 'success' && <pre>{JSON.stringify(state.data, null, 2)}</pre>}\n      <button onClick={loadData}>Reload</button>\n    </div>\n  );\n}",
+        "keyTakeaways": [
+          "Reducers must be pure functions with zero side effects, returning new state references immutably.",
+          "State-machine patterns prevent contradictory flags like isLoading and isSuccess being true simultaneously.",
+          "Reducers can be unit-tested without React Testing Library or DOM mounting."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 10,
+    "title": "Part 10 — Refs & Imperative DOM Operations",
+    "badge": "DOM & Refs",
+    "color": "#a855f7",
+    "sections": [
+      {
+        "id": "10.1",
+        "title": "28. useRef: DOM Access, Instance Variables & Previous Value",
+        "content": "### 1. The Dual Purpose of useRef\n1. **Direct DOM Node Reference**: Accessing underlying HTML elements for focus management, scroll positioning, and canvas drawing.\n2. **Persistent Mutable Instance Variable**: Holding values across renders (timer IDs, WebSockets, render counts) without triggering a re-render when mutated.\n\n### 2. Capturing Previous State with useRef\nBecause mutating a ref does not trigger a re-render, an Effect can record the current value in `ref.current` after render completes, allowing you to read the previous render's value.",
+        "code": "import { useRef, useEffect, useState } from 'react';\n\n// Custom hook to inspect previous value\nfunction usePrevious(value) {\n  const ref = useRef(undefined);\n  useEffect(() => {\n    ref.current = value; // Updated after render commits!\n  }, [value]);\n  return ref.current; // Returns previous value during render!\n}\n\nexport function AutoFocusSearchInput() {\n  const inputRef = useRef(null);\n  const [query, setQuery] = useState('');\n  const prevQuery = usePrevious(query);\n\n  useEffect(() => {\n    // Focus input on mount\n    inputRef.current?.focus();\n  }, []);\n\n  return (\n    <div>\n      <input\n        ref={inputRef}\n        value={query}\n        onChange={e => setQuery(e.target.value)}\n        placeholder=\"Type to search...\"\n      />\n      <p>Current: {query} | Previous: {prevQuery ?? 'none'}</p>\n    </div>\n  );\n}",
+        "keyTakeaways": [
+          "useRef returns a plain JavaScript object: { current: initialValue }.",
+          "Mutating ref.current does NOT schedule a component re-render.",
+          "Never read or write ref.current during render if it affects the output JSX; do so only inside Effects or event handlers."
+        ]
+      },
+      {
+        "id": "10.2",
+        "title": "29. Forwarding Refs & useImperativeHandle",
+        "content": "### 1. Ref Forwarding (React 19 vs React 18)\n- **React 18**: Function components cannot accept a `ref` prop directly; you must wrap the component in `forwardRef((props, ref) => ...)`.\n- **React 19**: `ref` is now a standard prop! `forwardRef` is deprecated; simply accept `{ ref, ...props }` like any other prop.\n\n### 2. useImperativeHandle: Custom Exposed Handles\nInstead of exposing the raw DOM element to parent components (which breaks encapsulation and allows dangerous DOM mutations), `useImperativeHandle` lets you expose a customized, constrained imperative API (e.g. `.focus()`, `.reset()`, `.scrollIntoView()`).",
+        "code": "import { useRef, useImperativeHandle, forwardRef } from 'react';\n\n// Custom exposed contract interface:\n// { focusInput: () => void, clearText: () => void }\n\nexport const CustomSearchBox = forwardRef(function CustomSearchBox(props, ref) {\n  const nativeInputRef = useRef(null);\n\n  useImperativeHandle(ref, () => ({\n    focusInput: () => {\n      nativeInputRef.current?.focus();\n    },\n    clearText: () => {\n      if (nativeInputRef.current) nativeInputRef.current.value = '';\n    }\n  }), []);\n\n  return <input ref={nativeInputRef} className=\"search-field\" {...props} />;\n});\n\n// Parent usage:\nfunction ParentController() {\n  const boxRef = useRef(null);\n  return (\n    <div>\n      <CustomSearchBox ref={boxRef} placeholder=\"Search...\" />\n      <button onClick={() => boxRef.current?.focusInput()}>Focus Field</button>\n      <button onClick={() => boxRef.current?.clearText()}>Clear Field</button>\n    </div>\n  );\n}",
+        "keyTakeaways": [
+          "React 19 accepts ref as a normal prop, phasing out the need for forwardRef wrapper.",
+          "useImperativeHandle restricts what parent components can do with a child component's ref.",
+          "Use imperative handles sparingly; prefer declarative props and state wherever possible."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 11,
+    "title": "Part 11 — Rendering Engine, Fiber & Reconciliation",
+    "badge": "Engine Internals",
+    "color": "#c084fc",
+    "sections": [
+      {
+        "id": "11.1",
+        "title": "30. The Virtual DOM Deep-Dive: Architecture, Diffing & Limitations",
+        "content": "### 1. What is the Virtual DOM (VDOM)?\nThe **Virtual DOM** is a lightweight, pure JavaScript object tree maintained in memory that mirrors the structure of the real browser Document Object Model (DOM). In React, when you write JSX like `<div className=\"badge\">Active</div>`, Babel/Vite transpiles it into a `jsx()` or `React.createElement()` call that produces a plain JavaScript object:\n\n```javascript\n// Simplified anatomy of a React Virtual DOM Element\n{\n  $$typeof: Symbol.for('react.element'), // Security guard against JSON injection\n  type: 'div',\n  key: null,\n  ref: null,\n  props: {\n    className: 'badge',\n    children: 'Active'\n  },\n  _owner: FiberNode // Pointer to the component that created it\n}\n```\n\n### 2. Why Did React Invent the Virtual DOM?\nThe Real DOM is an ancient API designed in the 1990s for static hyperlinked documents. Manipulating real DOM nodes directly using `document.createElement()` or `node.appendChild()` is not inherently slow in pure JavaScript execution time. \n\n**The real bottleneck is the Browser Rendering Engine:**\n- Every time a real DOM node is inserted, removed, or has its geometry modified, the browser must recalculate styles (**Recalculate Style**), recalculate geometry and coordinates for every affected element (**Layout / Reflow**), repaint pixels to layers (**Paint**), and combine layers onto the screen (**Composite**).\n- In a complex SPA with hundreds of dynamic nodes, updating nodes imperatively one-by-one triggers repeated **Layout Thrashing** that drops framerates below 60fps.\n- **The Virtual DOM acts as an in-memory buffer**: React calculates all state-driven changes across the entire component tree in memory, determines the absolute minimum set of real DOM mutations needed, and flushes them to the real DOM in a single synchronized batch during the Commit Phase.\n\n### 3. The Blueprint Analogy (Mental Model)\nThink of the real DOM as a **physical 50-story skyscraper made of concrete and steel**. Think of the Virtual DOM as an **architect's digital CAD blueprint on a computer screen**.\n- If you want to change the color of the 40th floor and move a doorway, knocking down physical walls and rebuilding them iteratively is astronomically expensive.\n- Instead, you open the CAD blueprint on your computer, experiment, calculate measurements, and diff the new blueprint against the previous blueprint.\n- Once the diff is computed, you hand the construction team a precise punch-list: *\"Only repaint wall 40B and move door 40D.\"* The physical building is touched only where strictly necessary.\n\n### 4. The Reconciliation Diffing Algorithm ($O(N)$ vs $O(N^3)$)\nThe state of computer science offers general tree-transformation algorithms (like Levenshtein tree edit distance), but their algorithmic complexity is $O(N^3)$. For a tree of 1,000 UI elements, computing the diff would require $1,000,000,000$ operations—freezing the browser for seconds!\n\nReact solves this by applying two **heuristic assumptions** that reduce the diffing complexity to **$O(N)$**:\n1. **Elements of different types generate completely different trees**: If a `<div>` is replaced by a `<span>`, React does not attempt to diff their children. It unmounts the old `<div>` and all its descendants, completely destroying their state, and mounts a fresh `<span>` tree.\n2. **The developer can hint at element stability using the `key` prop**: When rendering collections of child elements, React matches children in the previous tree with children in the new tree using keys. Without unique keys, React resorts to positional index matching, causing state corruption and re-rendering bugs.\n\n### 5. Virtual DOM vs Real DOM: Architectural Comparison\n\n| Dimension | Real DOM (Host Browser) | Virtual DOM (React Memory Tree) |\n| :--- | :--- | :--- |\n| **Data Structure** | C++ tree representation inside browser engine | Plain JavaScript objects in V8 Heap |\n| **Creation Cost** | Heavy (implements ~200+ properties of `HTMLElement`) | Extremely lightweight (just 5-6 object properties) |\n| **Mutation Cost** | Triggers layout recalculation, reflow, and repaint | Microseconds of JS arithmetic in memory |\n| **Direct Access** | Native browser API (`document.querySelector`) | React internal reconciler abstraction |\n| **Cross-Platform** | Web browsers only | Platform-agnostic (React DOM, React Native, React Three Fiber) |\n\n### 6. Limitations of the Virtual DOM & Modern Realities\nIn early marketing, React claimed *\"The Virtual DOM is faster than the Real DOM.\"* Modern senior engineers recognize the nuanced reality:\n1. **Memory Overhead**: Storing two full virtual representation trees in memory (`current` and `workInProgress`) consumes significant JavaScript heap space.\n2. **Garbage Collection (GC) Pressure**: Re-creating thousands of temporary JavaScript element objects on high-frequency renders (e.g. 60fps animations or rapid typing) triggers V8 garbage collection pauses, causing noticeable UI jank.\n3. **Not Faster than Optimized Vanilla JS**: A skilled engineer writing hand-tuned, pinpoint DOM operations (`el.textContent = count`) will always outperform Virtual DOM diffing because diffing still has to run before the DOM update. React's value is **declarative developer productivity and maintainability at scale**, not raw peak micro-benchmark speed.\n4. **Modern Alternatives**:\n   - **Svelte**: Compiles components into precise imperative JavaScript at build time. Zero Virtual DOM runtime overhead.\n   - **Solid.js**: Uses fine-grained reactive signals to update specific DOM text nodes directly with no tree diffing.\n   - **React Compiler (React 19)**: Automatically analyzes dependencies at build time to memoize component subtrees, skipping both render execution and VDOM diffing for unchanged nodes.",
+        "comparisonTable": [
+          {
+            "feature": "Memory Allocation",
+            "vdom": "Dual tree in JS heap (Current & WorkInProgress)",
+            "realDom": "Native browser C++ DOM nodes"
+          },
+          {
+            "feature": "Diffing Speed",
+            "vdom": "Sub-millisecond JS object comparison (O(N))",
+            "realDom": "N/A (Mutations applied directly)"
+          },
+          {
+            "feature": "Layout/Reflow Trigger",
+            "vdom": "None during diffing; only on Commit batch",
+            "realDom": "Immediately on unbatched layout property reads/writes"
+          },
+          {
+            "feature": "Platform Target",
+            "vdom": "Universal (DOM, iOS, Android, Canvas, Terminal)",
+            "realDom": "HTML browsers only"
+          }
+        ],
+        "code": "// Deep-dive: Inspecting what React.createElement actually creates\nimport React from 'react';\n\n// When you write this JSX:\nconst element = (\n  <button id=\"save-btn\" className=\"btn-primary\" onClick={() => console.log('Saved!')}>\n    <span>Save Changes</span>\n  </button>\n);\n\n// Babel/Vite transpiles it to:\n// React.createElement(type, props, ...children)\nconst compiledElement = React.createElement(\n  'button',\n  { id: 'save-btn', className: 'btn-primary', onClick: () => console.log('Saved!') },\n  React.createElement('span', null, 'Save Changes')\n);\n\n// Log the actual Virtual DOM object:\nconsole.log(compiledElement);\n/* Output:\n{\n  $$typeof: Symbol(react.element),\n  type: 'button',\n  key: null,\n  ref: null,\n  props: {\n    id: 'save-btn',\n    className: 'btn-primary',\n    onClick: [Function],\n    children: {\n      $$typeof: Symbol(react.element),\n      type: 'span',\n      key: null,\n      ref: null,\n      props: { children: 'Save Changes' }\n    }\n  }\n}\n*/",
+        "keyTakeaways": [
+          "The Virtual DOM is not a separate thread or magical browser feature; it is an ordinary JavaScript object tree in the V8 heap.",
+          "React's heuristic diffing achieves O(N) linear time by assuming different element types produce different trees and keys identify stable siblings.",
+          "Render does NOT mean DOM update: if the newly calculated VDOM tree matches the previous tree, 0 real DOM mutations occur.",
+          "Virtual DOM enables declarative programming and cross-platform abstractions (React Native, React Three Fiber) at the cost of heap memory and GC overhead."
+        ]
+      },
+      {
+        "id": "11.2",
+        "title": "31. The Two Phases: Render vs Commit Phase",
+        "content": "### 1. Render Phase (Pure, Interruptible Work)\n- React calls component functions from the top down to compute the next React element tree (Virtual DOM).\n- Runs the **Reconciliation Diffing Algorithm** to determine which host DOM mutations are required.\n- **Rules of Render Phase**: Must be **100% pure** with zero side effects. In Concurrent Mode (React 18/19), React can pause, yield to browser user input, split work across multiple frames, or completely abandon a render calculation if newer state arrives.\n- Never mutate the DOM, set timers, or initiate HTTP requests inside the render phase.\n\n### 2. Commit Phase (Synchronous, Mutative DOM Application)\n- React takes the finished work-in-progress fiber tree and applies real host mutations to the DOM in a single synchronous pass.\n- Inserts nodes (`appendChild`), removes nodes (`removeChild`), and updates attributes/styles.\n- Synchronously executes `useLayoutEffect` cleanups and setup functions before browser paint.\n- The browser paints the updated DOM tree to the screen.\n- React asynchronously executes `useEffect` cleanups and setup functions after paint has completed.\n\n### 3. Why a \"Render\" Does Not Mean a \"DOM Update\"\nOne of the most common junior misconceptions is equating component rendering with screen painting.\n- If component `<Card />` re-renders because its parent re-rendered, React executes the `Card()` function and constructs a new Virtual DOM object.\n- React diffs this object against the previous `Card` VDOM object.\n- If all props, children, and attributes are identical, the diff result is an empty set of mutations (`null`).\n- The commit phase does **nothing to the real DOM**. No browser layout or repaint occurs.\n- However, the JavaScript execution time of running `Card()` still consumed CPU cycles. This is why memoization tools like `React.memo` exist—to skip the render phase altogether when props have not changed.",
+        "comparisonTable": [
+          {
+            "feature": "Side Effects Allowed",
+            "render": "Strictly NO (pure calculation only)",
+            "commit": "YES (DOM mutation, useLayoutEffect, useEffect)"
+          },
+          {
+            "feature": "Can Be Interrupted",
+            "render": "YES (Time-slicing, Suspense, Concurrent Mode)",
+            "commit": "NO (Must complete synchronously to prevent visual tearing)"
+          },
+          {
+            "feature": "Frequency",
+            "render": "Can run multiple times for a single user update",
+            "commit": "Runs exactly once per completed render batch"
+          }
+        ],
+        "code": "// Demonstrating Render vs Commit execution order\nimport React, { useState, useEffect, useLayoutEffect } from 'react';\n\nexport function LifecycleVisualizer() {\n  const [count, setCount] = useState(0);\n\n  // 1. RENDER PHASE (runs on every state change)\n  console.log('[Render Phase] Component function executing. Count:', count);\n\n  // 2. COMMIT PHASE (Synchronous layout pass before screen paint)\n  useLayoutEffect(() => {\n    console.log('[Commit Phase - useLayoutEffect] DOM mutated, about to paint. Count:', count);\n    return () => console.log('[Commit Phase - useLayoutEffect Cleanup]');\n  }, [count]);\n\n  // 3. POST-PAINT PASSIVE PHASE (Asynchronous after browser painted screen)\n  useEffect(() => {\n    console.log('[Post-Paint - useEffect] Screen painted! Count:', count);\n    return () => console.log('[Post-Paint - useEffect Cleanup]');\n  }, [count]);\n\n  return (\n    <div style={{ padding: 16 }}>\n      <h3>Count: {count}</h3>\n      <button onClick={() => setCount(c => c + 1)}>Increment</button>\n    </div>\n  );\n}",
+        "keyTakeaways": [
+          "Render phase calculates the VDOM diff and can be paused or restarted by React Scheduler.",
+          "Commit phase mutates the real DOM synchronously to guarantee visual consistency and prevent UI tearing.",
+          "useLayoutEffect runs synchronously during commit before browser paint; useEffect runs asynchronously after paint.",
+          "A component render only results in a real DOM update if the Virtual DOM diff produces actual property or structural changes."
+        ]
+      },
+      {
+        "id": "11.3",
+        "title": "32. Fiber Architecture & The Work Loop",
+        "content": "### 1. Why Did React Replace the Stack Reconciler?\nPrior to React 16, React used the **Stack Reconciler**. It traversed the component tree recursively down the JavaScript call stack.\n- Once recursion began, the JavaScript main thread was 100% blocked until the entire tree was diffed and mounted.\n- If rendering a 5,000-row table took 80ms, every user click, keypress, and CSS animation was completely frozen for 80ms, resulting in dropped frames and unresponsive UI.\n- JavaScript has a single main thread: it cannot pause a native recursive call stack to let an input event run and then resume where it left off.\n\n### 2. The Fiber Node: A Virtual Call Stack on the Heap\nTo solve this, React re-implemented the call stack as an explicit **singly-linked list of Fiber objects stored on the heap**.\nEach Fiber node corresponds to a component instance and holds three vital navigational pointers:\n- `child`: Points to the component's first direct child.\n- `sibling`: Points to the component's next sibling.\n- `return`: Points to the parent fiber node (the node to return to when child work finishes).\n\n```\n          [App Fiber]\n               |\n            child\n               v\n        [Sidebar Fiber] -- sibling --> [Main Fiber]\n                                            |\n                                         child\n                                            v\n                                       [Header Fiber]\n```\n\nBecause this tree traversal is implemented as a pointer loop (`workInProgress = workInProgress.child || workInProgress.sibling || workInProgress.return`) rather than recursive functions, React can pause the loop at any arbitrary Fiber node!\n\n### 3. The Work Loop & Time Slicing\nReact uses a continuous cooperative scheduler loop:\n```javascript\nfunction workLoopConcurrent() {\n  // Perform work until deadline runs out or tree is finished\n  while (workInProgress !== null && !shouldYield()) {\n    performUnitOfWork(workInProgress);\n  }\n}\n```\n- `shouldYield()`: Checks if the current 5ms frame slice has expired. If a user event (such as typing into an input) is waiting in the browser event queue, React yields control back to the browser.\n- Once the browser finishes handling the user event, React resumes work on the next fiber in the linked list.\n- **Double Buffering**: React maintains two trees simultaneously:\n  1. `current`: The fiber tree currently visible on the screen.\n  2. `workInProgress`: The fiber tree being constructed in memory.\n  Once `workInProgress` is finished, React swaps the root pointer in $O(1)$ time—instantly switching screens without intermediate flicker.",
+        "comparisonTable": [
+          {
+            "feature": "Reconciler",
+            "stack": "Stack Reconciler (React 15 and below)",
+            "fiber": "Fiber Reconciler (React 16+ to React 19)"
+          },
+          {
+            "feature": "Data Structure",
+            "stack": "Native recursion on JS call stack",
+            "fiber": "Singly linked list of Fiber nodes on heap"
+          },
+          {
+            "feature": "Interruptible",
+            "stack": "NO (Synchronous lock)",
+            "fiber": "YES (Cooperative time-slicing via Scheduler)"
+          },
+          {
+            "feature": "Prioritization",
+            "stack": "All updates have identical priority",
+            "fiber": "Lane-based priority (Immediate, User-Blocking, Normal, Idle)"
+          }
+        ],
+        "code": "// Conceptual model of a Fiber Node and Work Loop\nclass SimpleFiberNode {\n  constructor(type, props) {\n    this.type = type;\n    this.props = props;\n    this.stateNode = null; // Real DOM node reference\n    this.child = null;     // First child pointer\n    this.sibling = null;   // Next sibling pointer\n    this.return = null;    // Parent pointer\n    this.alternate = null; // Pointer to current/workInProgress counterpart\n    this.flags = null;     // Placement, Update, Deletion flags\n  }\n}\n\n// How React walks the Fiber tree iteratively without recursion\nfunction performUnitOfWork(fiber) {\n  // 1. Process current fiber (execute component, compute hooks)\n  const nextChildren = fiber.type(fiber.props);\n  \n  // 2. Return child if exists (drill down)\n  if (fiber.child) {\n    return fiber.child;\n  }\n  \n  // 3. Otherwise return sibling, or bubble up to parent's sibling\n  let nextFiber = fiber;\n  while (nextFiber) {\n    if (nextFiber.sibling) {\n      return nextFiber.sibling;\n    }\n    nextFiber = nextFiber.return;\n  }\n  return null;\n}",
+        "keyTakeaways": [
+          "Fiber replaced the synchronous call stack with a heap-allocated singly-linked list of work units.",
+          "The three key fiber pointers are child, sibling, and return.",
+          "Time-slicing enables React to yield control to the browser every ~5ms so high-priority user input never stutters.",
+          "Double buffering swaps the current and workInProgress trees in O(1) time during commit."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 12,
+    "title": "Part 12 — Performance Optimization & Profiling",
+    "badge": "Optimization",
+    "color": "#f59e0b",
+    "sections": [
+      {
+        "id": "12.1",
+        "title": "32. React.memo, useMemo & useCallback in Depth",
+        "content": "### 1. Why Do Components Re-render?\nA component re-renders when:\n1. Its own local state changes.\n2. Its parent component re-renders (even if props did not change!).\n3. A Context it consumes updates.\n\n### 2. The Memoization Triad\n- **`React.memo`**: Wraps a component to prevent re-renders if its received props have not changed by shallow equality (`Object.is`).\n- **`useMemo`**: Caches the result of an expensive calculation across renders.\n- **`useCallback`**: Caches a function definition across renders to preserve referential equality when passed to memoized children.\n\n### 3. The Premature Optimization Trap\nDo NOT memoize everything blindly:\n- Memoization adds memory overhead and shallow comparison checks on every render.\n- If a child component is cheap to render (e.g. a simple `<button>`), the memo check costs more CPU time than the re-render itself!",
+        "code": "import React, { useState, useMemo, useCallback } from 'react';\n\n// Memoized child: only re-renders if 'onToggle' or 'label' changes reference!\nconst FilterButton = React.memo(function FilterButton({ label, onToggle }) {\n  console.log(\"FilterButton render:\", label);\n  return <button onClick={onToggle}>{label}</button>;\n});\n\nexport function ProductCatalog({ products }) {\n  const [filterActive, setFilterActive] = useState(false);\n  const [multiplier, setMultiplier] = useState(1);\n\n  // 1. useMemo for expensive data filtering:\n  const filteredProducts = useMemo(() => {\n    return products.filter(p => p.price * multiplier > 50);\n  }, [products, multiplier]);\n\n  // 2. useCallback to preserve function reference for memoized child:\n  const handleToggle = useCallback(() => {\n    setFilterActive(prev => !prev);\n  }, []); // Empty dependencies = stable reference forever!\n\n  return (\n    <div>\n      <FilterButton label=\"Toggle Active\" onToggle={handleToggle} />\n      <button onClick={() => setMultiplier(m => m + 1)}>Adjust Multiplier: {multiplier}</button>\n      <p>Filtered count: {filteredProducts.length}</p>\n    </div>\n  );\n}",
+        "keyTakeaways": [
+          "React.memo prevents a component from re-rendering if its props are referentially identical.",
+          "useCallback is only useful when passing functions to React.memo components or useEffect dependency arrays.",
+          "State colocation (pushing state down to where it is used) is more effective than widespread memoization."
+        ]
+      },
+      {
+        "id": "12.2",
+        "title": "33. Virtualization, Windowing & Code Splitting",
+        "content": "### 1. List Virtualization / Windowing\nRendering 10,000 DOM nodes simultaneously causes severe browser layout thrashing and high memory consumption.\n**Virtualization** calculates which items are currently visible in the scroll viewport and renders ONLY those items (e.g. 20 items instead of 10,000) using absolute positioning with dynamic translate offsets.\n\n### 2. Route-Level Code Splitting with React.lazy & Suspense\nBreak monolithic JS bundles into smaller chunks loaded on demand when the user navigates to a specific route.",
+        "code": "import { lazy, Suspense } from 'react';\nimport { Routes, Route } from 'react-router-dom';\n\n// Dynamic import: Webpack/Vite splits this into a separate chunk\nconst AnalyticsDashboard = lazy(() => import('./pages/AnalyticsDashboard'));\nconst SettingsPage = lazy(() => import('./pages/SettingsPage'));\n\nexport function AppRouter() {\n  return (\n    <Suspense fallback={<div className=\"route-spinner\">Loading application module...</div>}>\n      <Routes>\n        <Route path=\"/analytics\" element={<AnalyticsDashboard />} />\n        <Route path=\"/settings\" element={<SettingsPage />} />\n      </Routes>\n    </Suspense>\n  );\n}",
+        "keyTakeaways": [
+          "Virtualization renders only visible DOM nodes, allowing smooth 60fps scrolling over 50,000+ records.",
+          "React.lazy and dynamic imports split bundles into on-demand route chunks, improving initial load TTFB.",
+          "Always wrap lazy components with a meaningful <Suspense fallback> UI."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 13,
+    "title": "Part 13 — Error Boundaries, Suspense & Async Recovery",
+    "badge": "Resilience",
+    "color": "#d97706",
+    "sections": [
+      {
+        "id": "13.1",
+        "title": "34. Error Boundaries: Implementation & Catch Boundaries",
+        "content": "### 1. What is an Error Boundary?\nAn Error Boundary is a React component that catches JavaScript errors anywhere in its child component tree, logs those errors, and displays a graceful fallback UI instead of crashing the entire application into a blank white screen.\n\n### 2. What Error Boundaries Catch vs Do NOT Catch\n- **Catches**: Errors thrown during **Render Phase**, in **Lifecycle methods**, and inside constructors of child components.\n- **Does NOT Catch**:\n  1. Errors inside Event Handlers (use standard `try / catch`).\n  2. Asynchronous code (`setTimeout`, `fetch` callbacks).\n  3. Server-Side Rendering errors.\n  4. Errors thrown inside the Error Boundary component itself.",
+        "code": "import React, { Component } from 'react';\n\nexport class ErrorBoundary extends Component {\n  constructor(props) {\n    super(props);\n    this.state = { hasError: false, error: null };\n  }\n\n  // 1. Static method: Update state so next render shows fallback UI\n  static getDerivedStateFromError(error) {\n    return { hasError: true, error };\n  }\n\n  // 2. Lifecycle method: Log error to reporting service (Sentry, Datadog)\n  componentDidCatch(error, errorInfo) {\n    console.error(\"ErrorBoundary caught an unhandled crash:\", error, errorInfo);\n  }\n\n  handleReset = () => {\n    this.setState({ hasError: false, error: null });\n  };\n\n  render() {\n    if (this.state.hasError) {\n      return (\n        <div className=\"error-fallback-card\" role=\"alert\">\n          <h3>Something went wrong in this module.</h3>\n          <p>{this.state.error?.message}</p>\n          <button onClick={this.handleReset}>Try Again</button>\n        </div>\n      );\n    }\n    return this.props.children;\n  }\n}",
+        "keyTakeaways": [
+          "Error boundaries prevent a single component crash from breaking the entire web application.",
+          "They must be implemented as Class components using getDerivedStateFromError and componentDidCatch.",
+          "Error boundaries do not catch async fetch errors or event handler exceptions; handle those with try/catch."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 14,
+    "title": "Part 14 — React Architecture & Production Practices",
+    "badge": "Architecture",
+    "color": "#10b981",
+    "sections": [
+      {
+        "id": "14.1",
+        "title": "35. Feature-Based Architecture & Directory Standards",
+        "content": "### 1. Why Flat Folder Structures Break Down\nIn enterprise codebases with 200+ components, grouping by file type (`/components`, `/hooks`, `/services`) scatters related logic across the entire repository.\nWhen maintaining the \"Billing\" feature, you must jump across 5 different top-level folders.\n\n### 2. Feature-Based (Domain-Driven) Architecture\nGroup files by **Business Domain / Feature**. Each feature folder is self-contained with its own components, hooks, API services, types, and unit tests.",
+        "code": "/*\nEnterprise Feature-Oriented Directory Architecture:\n\nsrc/\n├── app/                  # Application root, providers, router configuration\n├── features/             # Self-contained business domain modules\n│   ├── authentication/\n│   │   ├── components/   # LoginForm.tsx, OtpVerification.tsx\n│   │   ├── hooks/        # useAuthSession.ts\n│   │   ├── api/          # authClient.ts\n│   │   ├── types/        # authTypes.ts\n│   │   └── index.ts      # Public API exports for auth\n│   ├── billing/          # Invoices, Stripe checkout, payment methods\n│   └── analytics/        # Charts, metrics tables, date filters\n├── shared/               # Reusable primitives across entire app\n│   ├── components/       # Button.tsx, Modal.tsx, Table.tsx, Dropdown.tsx\n│   ├── hooks/            # useDebounce.ts, useIntersectionObserver.ts\n│   └── utils/            # formatCurrency.ts, formatDate.ts\n└── main.tsx\n*/",
+        "keyTakeaways": [
+          "Feature-based folder architecture keeps related domain logic colocated.",
+          "Features expose a public index.ts boundary to prevent messy circular dependencies.",
+          "Shared UI components remain agnostic of business logic and domain entities."
+        ]
+      }
+    ]
+  }
+]

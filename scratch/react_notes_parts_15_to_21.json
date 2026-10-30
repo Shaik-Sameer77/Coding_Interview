@@ -1,0 +1,587 @@
+[
+  {
+    "id": 15,
+    "title": "Part 15 — React with TypeScript & Strict Typing Contracts",
+    "badge": "TypeScript + React",
+    "color": "#3b82f6",
+    "sections": [
+      {
+        "id": "15.1",
+        "title": "36. Typing Component Props, Children & ReactNode vs ReactElement",
+        "content": "### 1. Topic Overview & Mental Model\nTypeScript provides static type analysis for React components, eliminating prop typos, missing parameters, and runtime undefined errors before code reaches the browser.\n\n### 2. ReactNode vs ReactElement vs JSX.Element\n- **`ReactElement`**: Represents a pure virtual DOM object created by `React.createElement` or JSX: `{ type, props, key }`. It cannot be a primitive like a string or number.\n- **`ReactNode`**: Represents anything that React can legally render (ReactElement, string, number, boolean, null, undefined, or array of ReactNodes). **Always use `ReactNode` for typing the `children` prop!**",
+        "code": "import React, { ReactNode, ComponentPropsWithoutRef } from 'react';\n\n// 1. Reusable typed button extending native HTML button attributes:\ninterface ButtonProps extends ComponentPropsWithoutRef<'button'> {\n  variant?: 'primary' | 'secondary' | 'danger';\n  size?: 'sm' | 'md' | 'lg';\n  isLoading?: boolean;\n  children: ReactNode; // Standard for children\n}\n\nexport function Button({\n  variant = 'primary',\n  size = 'md',\n  isLoading = false,\n  disabled,\n  children,\n  ...restProps\n}: ButtonProps) {\n  return (\n    <button\n      className={`btn btn-${variant} btn-${size}`}\n      disabled={disabled || isLoading}\n      {...restProps}\n    >\n      {isLoading ? <span className=\"spinner\" /> : children}\n    </button>\n  );\n}",
+        "comparisonTable": [
+          {
+            "aspect": "ReactNode",
+            "detail": "Union of ReactElement, string, number, boolean, null, undefined. Best for typing children."
+          },
+          {
+            "aspect": "ReactElement",
+            "detail": "Strict object representing an instantiated JSX element; cannot be raw string/number."
+          }
+        ],
+        "keyTakeaways": [
+          "Use ReactNode to type the children prop and arbitrary renderable content.",
+          "Extend ComponentPropsWithoutRef<'element'> to inherit all native HTML attributes with full type safety.",
+          "Use discriminated unions for mutually exclusive component props."
+        ]
+      },
+      {
+        "id": "15.2",
+        "title": "37. Typing Hooks: useState, useRef, useReducer & Event Types",
+        "content": "### 1. Explicit Generics vs Type Inference in Hooks\n- **`useState`**: TS infers primitives automatically (`useState(0)` -> `number`). For union or nullable states, pass explicit generic types: `useState<User | null>(null)`.\n- **`useRef`**:\n  - DOM Ref: Pass initial value `null` with element type: `useRef<HTMLInputElement>(null)`. Produces `RefObject<HTMLInputElement>` with read-only `.current`.\n  - Mutable Ref: Pass non-null or typed initial: `useRef<number>(0)`. Produces `MutableRefObject<number>`.\n\n### 2. Common React SyntheticEvent Types\n- Input change: `React.ChangeEvent<HTMLInputElement>`\n- Form submit: `React.FormEvent<HTMLFormElement>`\n- Mouse click: `React.MouseEvent<HTMLButtonElement>`\n- Keyboard press: `React.KeyboardEvent<HTMLInputElement>`",
+        "code": "import { useState, useRef, useReducer, ChangeEvent, FormEvent } from 'react';\n\ninterface User {\n  id: string;\n  name: string;\n  email: string;\n}\n\nexport function UserRegistration() {\n  // Explicit generic for nullable state:\n  const [user, setUser] = useState<User | null>(null);\n\n  // DOM ref strictly typed to HTMLInputElement:\n  const nameInputRef = useRef<HTMLInputElement>(null);\n\n  // Strongly typed synthetic event handlers:\n  function handleInputChange(e: ChangeEvent<HTMLInputElement>) {\n    console.log(\"Current input value:\", e.target.value);\n  }\n\n  function handleFormSubmit(e: FormEvent<HTMLFormElement>) {\n    e.preventDefault();\n    if (nameInputRef.current) {\n      setUser({\n        id: crypto.randomUUID(),\n        name: nameInputRef.current.value,\n        email: \"user@enterprise.com\"\n      });\n    }\n  }\n\n  return (\n    <form onSubmit={handleFormSubmit}>\n      <input ref={nameInputRef} onChange={handleInputChange} placeholder=\"Name\" />\n      <button type=\"submit\">Save</button>\n    </form>\n  );\n}",
+        "keyTakeaways": [
+          "Always provide explicit generics when state can be null: useState<T | null>(null).",
+          "Type DOM refs as useRef<HTMLSpecificElement>(null) for correct autocomplete and property safety.",
+          "Leverage React.ChangeEvent<HTMLInputElement> for type-safe event target handling."
+        ]
+      },
+      {
+        "id": "15.3",
+        "title": "38. Generic Components & Discriminated Unions for UI States",
+        "content": "### 1. Generic Table / List Component\nCreate reusable components that accept arbitrary data arrays (`T[]`) while preserving complete type safety across columns and render functions.\n\n### 2. Discriminated Union Async State Pattern\nModel network states as discriminated unions with a common `status` property, preventing impossible states and guaranteeing exhaustive narrowing in TypeScript.",
+        "code": "import React from 'react';\n\n// 1. Discriminated Union Async State:\ntype RequestState<T> =\n  | { status: 'idle' }\n  | { status: 'loading' }\n  | { status: 'success'; data: T }\n  | { status: 'error'; message: string };\n\n// 2. Generic Reusable Table Component:\ninterface Column<T> {\n  key: keyof T | string;\n  header: string;\n  render?: (item: T) => React.ReactNode;\n}\n\ninterface GenericTableProps<T> {\n  data: T[];\n  columns: Column<T>[];\n  rowKey: (item: T) => string;\n}\n\nexport function GenericTable<T>({ data, columns, rowKey }: GenericTableProps<T>) {\n  return (\n    <table className=\"enterprise-table\">\n      <thead>\n        <tr>\n          {columns.map((col, idx) => (\n            <th key={idx}>{col.header}</th>\n          ))}\n        </tr>\n      </thead>\n      <tbody>\n        {data.map(item => (\n          <tr key={rowKey(item)}>\n            {columns.map((col, idx) => (\n              <td key={idx}>\n                {col.render ? col.render(item) : String((item as Record<string, unknown>)[col.key as string] ?? '')}\n              </td>\n            ))}\n          </tr>\n        ))}\n      </tbody>\n    </table>\n  );\n}",
+        "keyTakeaways": [
+          "Generic components (GenericTable<T>) allow building completely type-safe reusable design systems.",
+          "Discriminated unions ensure TypeScript forces you to handle loading, error, and success states exhaustively.",
+          "Avoid 'any' in component contracts; use generics and unknown with type guards."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 16,
+    "title": "Part 16 — React Testing from Absolute Zero",
+    "badge": "Testing Master",
+    "color": "#10b981",
+    "sections": [
+      {
+        "id": "16.1",
+        "title": "39. Testing Foundations: The Testing Pyramid & RTL Philosophy",
+        "content": "### 1. What is Software Testing? (The Real-World Analogy)\nImagine you are an automotive engineer manufacturing a passenger car. \n- You would never wait until the car is driving down the highway at 70 mph with a customer inside to find out if the brakes work.\n- Before installing the brake caliper into the vehicle, you test the hydraulic piston in isolation (**Unit Test**).\n- You connect the brake pedal, master cylinder, and brake lines together on a test chassis to verify the system works in unison (**Integration / Component Test**).\n- Finally, you test drive the fully assembled vehicle on a closed track in rain, snow, and emergency stops (**End-to-End Test**).\n\n**Automated testing in software is the exact same discipline:** writing code that programmatically runs your components, inputs realistic user actions, and validates that the output matches expectations before your real users ever see it.\n\n### 2. Manual Testing vs Automated Testing\n- **Manual Testing**: Clicking through your app by hand in the browser. It is slow, error-prone, unrepeatable, and impossible to scale across 500 features before every deployment.\n- **Automated Testing**: Running 200 test files in 5 seconds in your terminal or Continuous Integration (CI) pipeline on every git commit. It guarantees that adding Feature B never silently breaks Feature A (**Zero Regressions**).\n\n### 3. The Modern Testing Trophy (Why Component Tests Reign Supreme)\nIn traditional backend engineering, developers adhered to the **Testing Pyramid** (thousands of micro unit tests, very few integration tests, almost zero E2E).\nFor modern frontend applications, **The Testing Trophy** (advocated by Kent C. Dodds and Google) provides the highest return on investment (ROI):\n1. **End-to-End (E2E)**: Tests full browser-to-backend workflows (e.g. Playwright / Cypress). High confidence, but slow to run and prone to network flakiness.\n2. **Integration / Component Tests (The Bulk of the Trophy)**: Testing React components with simulated user interactions in a virtual DOM environment (React Testing Library + Vitest). Fast, deterministic, and tests real user behavior.\n3. **Unit Tests**: Testing pure utility functions, math helpers, or complex state reducers.\n4. **Static Analysis**: TypeScript and ESLint catching syntax errors, typos, and missing props before code even runs.\n\n### 4. The React Testing Library (RTL) Philosophy\n> *\"The more your tests resemble the way your software is used, the more confidence they can give you.\"* — Kent C. Dodds\n\nIn the early days of React, developers used libraries like **Enzyme** that tested **implementation details**:\n```javascript\n// ❌ WRONG: Fragile Enzyme-style test (Testing Implementation Details)\nconst wrapper = shallow(<Counter />);\nexpect(wrapper.state('count')).toBe(0); // Peeking at internal component state!\nwrapper.find('button').prop('onClick')(); // Directly executing handler props!\nexpect(wrapper.state('count')).toBe(1);\n```\n**Why this is terrible:** If you refactor `<Counter />` from class component `this.state` to `useState`, or rename the internal state variable from `count` to `value`, your test **fails catastrophically even though the component still works perfectly for real users!**\n\n**The RTL Behavior-Driven Way:**\n```javascript\n// ✅ CORRECT: Testing user behavior through the rendered DOM\nrender(<Counter />);\nexpect(screen.getByRole('heading', { name: /count: 0/i })).toBeInTheDocument();\nawait user.click(screen.getByRole('button', { name: /increment/i }));\nexpect(screen.getByRole('heading', { name: /count: 1/i })).toBeInTheDocument();\n```\nRTL does not care whether you use `useState`, `useReducer`, Redux, or Zustand. As long as the button is clickable and the screen updates, the test passes. You can refactor internal code with 100% confidence.",
+        "comparisonTable": [
+          {
+            "feature": "Testing Paradigm",
+            "rtl": "Behavior-Driven (User perspective)",
+            "enzyme": "Implementation-Driven (Internal state & methods)"
+          },
+          {
+            "feature": "Refactor Resilience",
+            "rtl": "High (Tests pass if user experience is preserved)",
+            "enzyme": "Extremely low (Breaks on internal variable renames)"
+          },
+          {
+            "feature": "Accessibility Incentive",
+            "rtl": "Mandatory (Forces use of accessible roles & labels)",
+            "enzyme": "None (Encourages CSS class selectors)"
+          },
+          {
+            "feature": "Environment",
+            "rtl": "DOM-compliant (jsdom or browser)",
+            "enzyme": "Shallow rendering without true DOM hierarchy"
+          }
+        ],
+        "code": "// Comparison: Fragile vs Robust Testing Approach\n// 1. The Component under test:\nfunction StatusIndicator({ isOnline }) {\n  const [internalCode, setInternalCode] = useState(isOnline ? 200 : 503);\n  return (\n    <div role=\"status\" aria-label=\"System Status\">\n      {isOnline ? 'System Operational' : 'System Degraded'}\n    </div>\n  );\n}\n\n// ❌ FRAGILE TEST (Tests internal state - breaks when internalCode is removed)\ntest('bad test', () => {\n  const wrapper = shallow(<StatusIndicator isOnline={true} />);\n  expect(wrapper.state('internalCode')).toBe(200); // ❌ Implementation leak!\n});\n\n// ✅ ROBUST RTL TEST (Tests what a user or screen reader sees)\nimport { render, screen } from '@testing-library/react';\n\ntest('renders operational status when isOnline is true', () => {\n  render(<StatusIndicator isOnline={true} />);\n  const statusElement = screen.getByRole('status', { name: /system status/i });\n  expect(statusElement).toHaveTextContent(/system operational/i);\n});",
+        "keyTakeaways": [
+          "Automated tests verify that your software works before real users encounter bugs in production.",
+          "The Testing Trophy prioritizes component/integration tests because they deliver the highest confidence for the lowest maintenance cost.",
+          "Never test internal component state, private variable names, or internal handler props.",
+          "Always test from the user's perspective: find elements by accessible roles and text, interact via realistic events, and assert on visible DOM changes."
+        ]
+      },
+      {
+        "id": "16.2",
+        "title": "40. The React Testing Ecosystem & Zero-Config Setup",
+        "content": "### 1. The Core Tools Explained\nWhen learning React testing from zero, the multiple library names can feel overwhelming. Here is the exact role of each tool:\n\n1. **Vitest (or Jest)** — *The Test Runner & Assertion Engine*:\n   - Finds test files (e.g. `*.test.jsx` or `*.spec.tsx`).\n   - Executes tests in parallel with fast Hot Module Replacement (HMR).\n   - Provides test lifecycle functions (`describe`, `it`, `test`, `beforeEach`, `afterEach`) and assertion methods (`expect(x).toBe(y)`).\n2. **`@testing-library/react` (RTL)** — *The Component Mounter & Query Suite*:\n   - Mounts React components into a virtual DOM environment using `render(<MyComponent />)`.\n   - Provides the `screen` object to search for rendered elements using accessible queries (`screen.getByRole`, `screen.getByText`).\n   - Automatically cleans up the DOM after every single test to prevent test cross-contamination.\n3. **`@testing-library/user-event`** — *The Realistic User Simulator*:\n   - Simulates complete browser interaction events in realistic sequence: mouse hover, focus, keydown, keypress, input change, keyup, and click.\n4. **`@testing-library/jest-dom`** — *The Human-Readable DOM Matchers*:\n   - Adds custom matchers to `expect`, such as `.toBeInTheDocument()`, `.toBeVisible()`, `.toBeDisabled()`, `.toHaveClass()`, and `.toHaveValue()`.\n5. **`jsdom`** — *The Headless Browser Simulator*:\n   - A pure JavaScript implementation of browser Web Standards (DOM, HTML5, window, document) that runs inside Node.js without needing to open a slow physical browser window.\n\n### 2. Setting Up Vitest & RTL in a Vite React Project Step-by-Step\nTo configure testing from scratch in any modern React application, install the dependencies:\n```bash\nnpm install -D vitest @testing-library/react @testing-library/jest-dom @testing-library/user-event jsdom\n```\n\n**Step 1: Configure `vite.config.js` (or `vitest.config.js`)**\n```javascript\nimport { defineConfig } from 'vite';\nimport react from '@vitejs/plugin-react';\n\nexport default defineConfig({\n  plugins: [react()],\n  test: {\n    globals: true, // Enables describe, it, expect globally without importing\n    environment: 'jsdom', // Simulates browser DOM in Node.js\n    setupFiles: './src/setupTests.js', // Runs setup before each test file\n    css: true, // Processes CSS modules if needed\n  },\n});\n```\n\n**Step 2: Create `src/setupTests.js`**\n```javascript\n// Extends Vitest expect with jest-dom matchers (toBeInTheDocument, etc.)\nimport '@testing-library/jest-dom/vitest';\nimport { cleanup } from '@testing-library/react';\nimport { afterEach } from 'vitest';\n\n// Automatically clean up DOM after each test run\nafterEach(() => {\n  cleanup();\n});\n```\n\n**Step 3: Add npm script to `package.json`**\n```json\n\"scripts\": {\n  \"test\": \"vitest\",\n  \"test:run\": \"vitest run\",\n  \"test:coverage\": \"vitest run --coverage\"\n}\n```",
+        "comparisonTable": [
+          {
+            "tool": "Vitest",
+            "responsibility": "Test Runner & CLI",
+            "replaces": "Jest (faster, native ESM & Vite config)"
+          },
+          {
+            "tool": "@testing-library/react",
+            "responsibility": "Mounting & Querying DOM",
+            "replaces": "Enzyme / ReactTestUtils"
+          },
+          {
+            "tool": "@testing-library/user-event",
+            "responsibility": "Realistic user dispatch",
+            "replaces": "fireEvent (which skips browser bubbling/focus)"
+          },
+          {
+            "tool": "jsdom",
+            "responsibility": "In-memory DOM environment",
+            "replaces": "Real browser headless instances (Chrome/Puppeteer for unit)"
+          }
+        ],
+        "code": "// Example package.json configuration snippet\n{\n  \"name\": \"my-react-app\",\n  \"scripts\": {\n    \"dev\": \"vite\",\n    \"build\": \"vite build\",\n    \"test\": \"vitest\",\n    \"test:ui\": \"vitest --ui\",\n    \"test:run\": \"vitest run\"\n  },\n  \"devDependencies\": {\n    \"@testing-library/jest-dom\": \"^6.4.2\",\n    \"@testing-library/react\": \"^15.0.0\",\n    \"@testing-library/user-event\": \"^14.5.2\",\n    \"@vitejs/plugin-react\": \"^4.2.1\",\n    \"jsdom\": \"^24.0.0\",\n    \"vite\": \"^5.2.0\",\n    \"vitest\": \"^1.4.0\"\n  }\n}",
+        "keyTakeaways": [
+          "Vitest is the test runner that discovers and executes test files.",
+          "React Testing Library mounts components and provides accessible query methods.",
+          "user-event simulates realistic user keyboard and mouse input.",
+          "jest-dom provides expressive matchers like .toBeInTheDocument() and .toBeDisabled()."
+        ]
+      },
+      {
+        "id": "16.3",
+        "title": "41. Writing Your First React Test: Step-by-Step with Paired Files",
+        "content": "### 1. The Anatomy of a React Test\nLet's build a real component and its corresponding test file from absolute zero.\n\nNotice the file naming convention:\n- Component file: `src/components/Counter.jsx`\n- Test file: `src/components/Counter.test.jsx` (or `Counter.spec.jsx`). Vitest automatically scans your project and executes any file matching `*.test.*` or `*.spec.*`.\n\n### 2. Component File: `src/components/Counter.jsx`\nHere is our production-ready Counter component:\n```jsx\nimport React, { useState } from 'react';\n\nexport function Counter({ initialCount = 0, step = 1 }) {\n  const [count, setCount] = useState(initialCount);\n\n  return (\n    <section aria-labelledby=\"counter-title\" style={{ padding: 16 }}>\n      <h2 id=\"counter-title\">Interactive Counter</h2>\n      \n      <p role=\"status\" aria-live=\"polite\">\n        Current Count: <strong data-testid=\"count-value\">{count}</strong>\n      </p>\n\n      {count < 0 && <p role=\"alert\" style={{ color: 'red' }}>Warning: Negative count!</p>}\n\n      <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>\n        <button \n          type=\"button\" \n          onClick={() => setCount(c => c - step)}\n          aria-label=\"Decrement count\"\n        >\n          - Decrement\n        </button>\n\n        <button \n          type=\"button\" \n          onClick={() => setCount(initialCount)}\n          disabled={count === initialCount}\n        >\n          Reset\n        </button>\n\n        <button \n          type=\"button\" \n          onClick={() => setCount(c => c + step)}\n          aria-label=\"Increment count\"\n        >\n          + Increment\n        </button>\n      </div>\n    </section>\n  );\n}\n```\n\n### 3. Test File: `src/components/Counter.test.jsx`\nNow, here is the complete, line-by-line test file:\n```jsx\nimport { describe, it, expect } from 'vitest';\nimport { render, screen } from '@testing-library/react';\nimport userEvent from '@testing-library/user-event';\nimport React from 'react';\nimport { Counter } from './Counter';\n\ndescribe('Counter Component', () => {\n  it('renders with the default initial count of 0', () => {\n    // 1. ARRANGE: Mount the component into the virtual jsdom container\n    render(<Counter />);\n\n    // 2. ACT: Find the heading and the status elements\n    const heading = screen.getByRole('heading', { name: /interactive counter/i });\n    const countStatus = screen.getByRole('status');\n    const resetButton = screen.getByRole('button', { name: /reset/i });\n\n    // 3. ASSERT: Verify initial UI state\n    expect(heading).toBeInTheDocument();\n    expect(countStatus).toHaveTextContent('Current Count: 0');\n    expect(resetButton).toBeDisabled(); // Reset should be disabled initially\n  });\n\n  it('increments the count when the increment button is clicked', async () => {\n    // 1. ARRANGE: Setup user-event instance and render component\n    const user = userEvent.setup();\n    render(<Counter initialCount={5} step={2} />);\n\n    // 2. ACT: Find button by accessible name and click it\n    const incrementBtn = screen.getByRole('button', { name: /increment count/i });\n    await user.click(incrementBtn);\n\n    // 3. ASSERT: Count increases from 5 to 7 (5 + step of 2)\n    const countStatus = screen.getByRole('status');\n    expect(countStatus).toHaveTextContent('Current Count: 7');\n  });\n\n  it('shows an alert warning when count drops below zero', async () => {\n    const user = userEvent.setup();\n    render(<Counter initialCount={0} />);\n\n    const decrementBtn = screen.getByRole('button', { name: /decrement count/i });\n    await user.click(decrementBtn);\n\n    // Assert alert appears in DOM\n    const alertMessage = screen.getByRole('alert');\n    expect(alertMessage).toBeInTheDocument();\n    expect(alertMessage).toHaveTextContent(/warning: negative count!/i);\n  });\n\n  it('resets count back to initial value and disables reset button', async () => {\n    const user = userEvent.setup();\n    render(<Counter initialCount={10} />);\n\n    const incrementBtn = screen.getByRole('button', { name: /increment count/i });\n    const resetBtn = screen.getByRole('button', { name: /reset/i });\n\n    // Click increment twice\n    await user.click(incrementBtn);\n    await user.click(incrementBtn);\n    expect(screen.getByRole('status')).toHaveTextContent('Current Count: 12');\n    expect(resetBtn).toBeEnabled();\n\n    // Click reset\n    await user.click(resetBtn);\n    expect(screen.getByRole('status')).toHaveTextContent('Current Count: 10');\n    expect(resetBtn).toBeDisabled();\n  });\n});\n```\n\n### 4. Line-by-Line Breakdown of the Test Code\n- `describe('Counter Component', () => { ... })`: Groups related tests into a test suite block for clear organization and terminal reporting.\n- `it('should ...')` (or `test('should ...')`): Defines an individual test case. It must focus on verifying one specific user behavior.\n- `const user = userEvent.setup()`: Initializes the user-event simulation engine before rendering. Always do this for async event dispatch!\n- `render(<Counter initialCount={5} />)`: Mounts the React component into an isolated `jsdom` `<div>` attached to `document.body`.\n- `screen.getByRole('button', { name: /increment count/i })`: Queries the DOM using accessibility standards. The regular expression `/increment count/i` performs a case-insensitive search.\n- `await user.click(button)`: Asynchronously simulates a real mouse click. It returns a Promise, so the test function must be marked `async`!\n- `expect(countStatus).toHaveTextContent('Current Count: 7')`: The assertion that validates the actual DOM text matches our expected outcome.\n\n### 5. How to Read Test Failures in the Terminal\nWhen a test fails, Vitest and RTL print an incredibly helpful diagnostic output. \nFor example, if an element was not found, you will see:\n```\nFAIL  src/components/Counter.test.jsx > Counter Component > increments count\nTestingLibraryElementError: Unable to find an accessible element with the role \"button\" and name \"/increment/i\"\n\nHere are the accessible roles currently available:\n\n  button:\n  Name \"Decrement count\":\n  <button aria-label=\"Decrement count\" type=\"button\" />\n  --------------------------------------------------\n  Name \"+ Add\":\n  <button type=\"button\">+ Add</button>\n\nIgnored nodes: comments, script, style\n<div>\n  <section aria-labelledby=\"counter-title\">\n    ...\n  </section>\n</div>\n```\n**How to diagnose this error:** Look at the *\"accessible roles currently available\"* list printed by RTL! In this case, it shows the button text was actually `\"+ Add\"`, not `\"Increment\"`. You immediately know your selector had a typo!",
+        "comparisonTable": [
+          {
+            "phase": "1. Arrange",
+            "meaning": "Prepare the environment, props, mock handlers, and mount component via render()",
+            "rtlMethod": "render(<Component />)"
+          },
+          {
+            "phase": "2. Act",
+            "meaning": "Perform user actions (typing, clicking, navigating)",
+            "rtlMethod": "await user.click(), await user.type()"
+          },
+          {
+            "phase": "3. Assert",
+            "meaning": "Verify that the rendered DOM reflects the expected changes",
+            "rtlMethod": "expect(element).toBeInTheDocument()"
+          }
+        ],
+        "code": "// Quick Reference: AAA Pattern in React Testing\nimport { render, screen } from '@testing-library/react';\nimport userEvent from '@testing-library/user-event';\nimport { Counter } from './Counter';\n\ntest('demonstrating Arrange-Act-Assert pattern', async () => {\n  // 1. ARRANGE\n  const user = userEvent.setup();\n  render(<Counter initialCount={0} />);\n  const button = screen.getByRole('button', { name: /increment count/i });\n  const display = screen.getByRole('status');\n\n  // 2. ACT\n  await user.click(button);\n\n  // 3. ASSERT\n  expect(display).toHaveTextContent('Current Count: 1');\n});",
+        "keyTakeaways": [
+          "Every test follows the Arrange-Act-Assert (AAA) pattern.",
+          "Vitest automatically finds and executes all files ending in .test.jsx or .spec.jsx.",
+          "userEvent.setup() must be called before rendering for authentic browser event simulation.",
+          "When a query fails, read the DOM dump and available roles printed in the terminal to immediately identify selector mismatches."
+        ]
+      },
+      {
+        "id": "16.4",
+        "title": "42. RTL Query Hierarchy: getBy vs queryBy vs findBy",
+        "content": "### 1. The Three Query Types Explained\nReact Testing Library gives you three prefixes for finding elements on the screen. Choosing the wrong prefix is the #1 mistake made by junior developers:\n\n| Prefix | Behavior When 0 Found | Behavior When 1 Found | Behavior When >1 Found | Primary Use Case |\n| :--- | :--- | :--- | :--- | :--- |\n| **`getBy...`** | 💥 **Throws error immediately** | Returns element | 💥 Throws error | Asserting elements that **MUST exist right now** |\n| **`queryBy...`** | ✅ **Returns `null`** | Returns element | 💥 Throws error | Asserting elements that **MUST NOT exist** |\n| **`findBy...`** | ⏳ **Waits up to 1000ms**, then throws | Returns element | 💥 Throws error | Asserting elements that **appear asynchronously** (after fetch or timer) |\n\n### 2. The Golden Rule of Negative Assertions (`queryBy`)\nIf you want to verify that an error message is **NOT** on the screen:\n```javascript\n// ❌ WRONG: getBy throws an error immediately and crashes your test!\nexpect(screen.getByText(/invalid password/i)).not.toBeInTheDocument();\n\n// ✅ CORRECT: queryBy returns null safely without throwing\nexpect(screen.queryByText(/invalid password/i)).not.toBeInTheDocument();\nexpect(screen.queryByText(/invalid password/i)).toBeNull();\n```\n\n### 3. The Accessibility-First Query Priority Hierarchy\nAlways prefer queries in this order of priority. This forces your application to be 100% accessible to screen readers and assistive technology:\n\n1. **`getByRole(role, { name })`** (Top Priority - Used 80% of the time)\n   - Accessible roles: `button`, `heading`, `textbox`, `checkbox`, `combobox`, `alert`, `dialog`, `status`, `navigation`, `list`, `listitem`.\n   - Accessible name: The visible text inside the button, the `aria-label`, or the associated `<label>`.\n   - Example: `screen.getByRole('button', { name: /submit order/i })`\n2. **`getByLabelText(text)`**\n   - For form inputs that have an associated `<label htmlFor=\"id\">`.\n   - Example: `screen.getByLabelText(/email address/i)`\n3. **`getByPlaceholderText(text)`**\n   - Only when an input does not have a visible label (e.g. search bars).\n4. **`getByText(text)`**\n   - For non-interactive elements like paragraph text, spans, or static headers.\n5. **`getByDisplayValue(value)`**\n   - For verifying the currently typed value in a form control.\n6. **`getByTestId(id)`** (Absolute Last Resort)\n   - Only use when an element has no accessible role or dynamic text (e.g. an SVG chart canvas).\n   - Requires adding `data-testid=\"chart-canvas\"` to the JSX.\n\n### 4. Scoping Queries with `within()`\nWhen your page contains multiple cards, list items, or tables that have identical buttons (e.g. five \"Delete\" buttons in a list), querying `screen.getByRole('button', { name: /delete/i })` will throw an error: *\"Found multiple elements\"*.\n\nUse `within()` to scope your query to a specific parent element:\n```jsx\nimport { render, screen, within } from '@testing-library/react';\n\ntest('deletes only the second item in a list', async () => {\n  const user = userEvent.setup();\n  render(<UserDirectory />);\n\n  // Find all user card list items\n  const userCards = screen.getAllByRole('listitem');\n  expect(userCards).toHaveLength(3);\n\n  // Scope search to the second card only!\n  const secondCard = userCards[1];\n  const deleteBtnInSecondCard = within(secondCard).getByRole('button', { name: /delete/i });\n\n  await user.click(deleteBtnInSecondCard);\n  expect(within(secondCard).queryByRole('button', { name: /delete/i })).not.toBeInTheDocument();\n});\n```",
+        "comparisonTable": [
+          {
+            "query": "getByRole",
+            "priority": "1 (Highest)",
+            "why": "Reflects how screen readers and keyboard users perceive the element"
+          },
+          {
+            "query": "getByLabelText",
+            "priority": "2",
+            "why": "Ensures form controls are properly linked to labels"
+          },
+          {
+            "query": "getByPlaceholderText",
+            "priority": "3",
+            "why": "Acceptable fallback for search inputs"
+          },
+          {
+            "query": "getByText",
+            "priority": "4",
+            "why": "Finds plain text outside of interactive controls"
+          },
+          {
+            "query": "getByTestId",
+            "priority": "6 (Lowest)",
+            "why": "Tests implementation artifacts; real users do not see test IDs"
+          }
+        ],
+        "code": "// Practical query demonstration\nimport { render, screen, within } from '@testing-library/react';\n\nfunction UserTable({ users }) {\n  return (\n    <table>\n      <thead>\n        <tr><th>Name</th><th>Action</th></tr>\n      </thead>\n      <tbody>\n        {users.map(u => (\n          <tr key={u.id} data-testid={`user-row-${u.id}`}>\n            <td>{u.name}</td>\n            <td><button aria-label={`Edit ${u.name}`}>Edit</button></td>\n          </tr>\n        ))}\n      </tbody>\n    </table>\n  );\n}\n\ntest('demonstrating within scoping', () => {\n  render(<UserTable users={[{ id: 1, name: 'Alice' }, { id: 2, name: 'Bob' }]} />);\n\n  // Finding Bob's edit button using accessible name:\n  const bobEditBtn = screen.getByRole('button', { name: 'Edit Bob' });\n  expect(bobEditBtn).toBeInTheDocument();\n\n  // Or scoping within Bob's row:\n  const bobRow = screen.getByTestId('user-row-2');\n  const editBtn = within(bobRow).getByRole('button', { name: /edit/i });\n  expect(editBtn).toBeInTheDocument();\n});",
+        "keyTakeaways": [
+          "Use getBy for elements that must exist immediately.",
+          "Use queryBy with .not.toBeInTheDocument() to verify an element does not exist.",
+          "Use findBy for elements that appear asynchronously after network requests or state delays.",
+          "Use within(parentContainer) to scope queries when multiple elements share identical names."
+        ]
+      },
+      {
+        "id": "16.5",
+        "title": "43. Simulating Realistic User Interactions with userEvent",
+        "content": "### 1. Why `userEvent` is Superior to `fireEvent`\nReact Testing Library originally included `fireEvent`.\n- `fireEvent.click(button)`: Dispatches a synthetic DOM click event directly to the button. It does not check if the button is disabled, does not move focus, and does not fire `mouseenter`, `mousedown`, or `mouseup`.\n- `userEvent.click(button)`: **Simulates real browser behavior**. It checks if the button is physically visible and clickable. If the button has `disabled`, `userEvent` refuses to click it—just like a real human user cannot click a disabled button!\n- When typing, `fireEvent.change(input, { target: { value: 'abc' } })` dumps the entire string into the input at once. `userEvent.type(input, 'abc')` fires keydown, keypress, input, and keyup for **every individual character**, properly triggering debounces and validation handlers!\n\n### 2. Component File: `src/components/LoginForm.jsx`\nA real-world login form with validation, password visibility toggle, loading state, and error handling:\n```jsx\nimport React, { useState } from 'react';\n\nexport function LoginForm({ onSubmit }) {\n  const [email, setEmail] = useState('');\n  const [password, setPassword] = useState('');\n  const [showPassword, setShowPassword] = useState(false);\n  const [errors, setErrors] = useState({});\n  const [isSubmitting, setIsSubmitting] = useState(false);\n\n  const validate = () => {\n    const errs = {};\n    if (!email) errs.email = 'Email is required';\n    else if (!/\\S+@\\S+\\.\\S+/.test(email)) errs.email = 'Invalid email format';\n    \n    if (!password) errs.password = 'Password is required';\n    else if (password.length < 6) errs.password = 'Password must be at least 6 characters';\n    \n    return errs;\n  };\n\n  const handleSubmit = async (e) => {\n    e.preventDefault();\n    const validationErrors = validate();\n    if (Object.keys(validationErrors).length > 0) {\n      setErrors(validationErrors);\n      return;\n    }\n\n    setErrors({});\n    setIsSubmitting(true);\n    try {\n      await onSubmit({ email, password });\n    } catch (err) {\n      setErrors({ server: err.message || 'Login failed' });\n    } finally {\n      setIsSubmitting(false);\n    }\n  };\n\n  return (\n    <form onSubmit={handleSubmit} noValidate aria-label=\"Sign In Form\" style={{ maxWidth: 360 }}>\n      <h2>Sign In</h2>\n\n      {errors.server && (\n        <div role=\"alert\" style={{ color: 'red', marginBottom: 12 }}>\n          {errors.server}\n        </div>\n      )}\n\n      <div style={{ marginBottom: 12 }}>\n        <label htmlFor=\"login-email\">Email Address</label>\n        <input\n          id=\"login-email\"\n          type=\"email\"\n          value={email}\n          onChange={(e) => setEmail(e.target.value)}\n          aria-invalid={Boolean(errors.email)}\n          aria-describedby={errors.email ? 'email-error' : undefined}\n          style={{ width: '100%', display: 'block', marginTop: 4 }}\n        />\n        {errors.email && (\n          <span id=\"email-error\" role=\"alert\" style={{ color: 'red', fontSize: 12 }}>\n            {errors.email}\n          </span>\n        )}\n      </div>\n\n      <div style={{ marginBottom: 12 }}>\n        <label htmlFor=\"login-password\">Password</label>\n        <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>\n          <input\n            id=\"login-password\"\n            type={showPassword ? 'text' : 'password'}\n            value={password}\n            onChange={(e) => setPassword(e.target.value)}\n            aria-invalid={Boolean(errors.password)}\n            aria-describedby={errors.password ? 'password-error' : undefined}\n            style={{ flex: 1 }}\n          />\n          <button\n            type=\"button\"\n            onClick={() => setShowPassword(s => !s)}\n            aria-label={showPassword ? 'Hide password' : 'Show password'}\n          >\n            {showPassword ? 'Hide' : 'Show'}\n          </button>\n        </div>\n        {errors.password && (\n          <span id=\"password-error\" role=\"alert\" style={{ color: 'red', fontSize: 12 }}>\n            {errors.password}\n          </span>\n        )}\n      </div>\n\n      <button type=\"submit\" disabled={isSubmitting} style={{ width: '100%', padding: 8 }}>\n        {isSubmitting ? 'Signing in...' : 'Sign In'}\n      </button>\n    </form>\n  );\n}\n```\n\n### 3. Test File: `src/components/LoginForm.test.jsx`\n```jsx\nimport { describe, it, expect, vi } from 'vitest';\nimport { render, screen } from '@testing-library/react';\nimport userEvent from '@testing-library/user-event';\nimport React from 'react';\nimport { LoginForm } from './LoginForm';\n\ndescribe('LoginForm Component', () => {\n  it('renders all form fields empty initially', () => {\n    render(<LoginForm onSubmit={vi.fn()} />);\n\n    expect(screen.getByRole('heading', { name: /sign in/i })).toBeInTheDocument();\n    expect(screen.getByLabelText(/email address/i)).toHaveValue('');\n    expect(screen.getByLabelText(/^password$/i)).toHaveValue('');\n    expect(screen.getByRole('button', { name: /sign in/i })).toBeEnabled();\n  });\n\n  it('validates required fields when submitted empty', async () => {\n    const user = userEvent.setup();\n    const handleSubmit = vi.fn();\n    render(<LoginForm onSubmit={handleSubmit} />);\n\n    // Click submit without filling anything\n    const submitBtn = screen.getByRole('button', { name: /sign in/i });\n    await user.click(submitBtn);\n\n    // Verify validation errors appear\n    expect(screen.getByText(/email is required/i)).toBeInTheDocument();\n    expect(screen.getByText(/password is required/i)).toBeInTheDocument();\n    expect(handleSubmit).not.toHaveBeenCalled();\n  });\n\n  it('toggles password visibility between masked and plain text', async () => {\n    const user = userEvent.setup();\n    render(<LoginForm onSubmit={vi.fn()} />);\n\n    const passwordInput = screen.getByLabelText(/^password$/i);\n    const toggleBtn = screen.getByRole('button', { name: /show password/i });\n\n    expect(passwordInput).toHaveAttribute('type', 'password');\n\n    // Click toggle button\n    await user.click(toggleBtn);\n    expect(passwordInput).toHaveAttribute('type', 'text');\n    expect(screen.getByRole('button', { name: /hide password/i })).toBeInTheDocument();\n\n    // Click again to hide\n    await user.click(screen.getByRole('button', { name: /hide password/i }));\n    expect(passwordInput).toHaveAttribute('type', 'password');\n  });\n\n  it('submits valid credentials successfully', async () => {\n    const user = userEvent.setup();\n    const handleSubmit = vi.fn().mockResolvedValue({ success: true });\n    render(<LoginForm onSubmit={handleSubmit} />);\n\n    const emailInput = screen.getByLabelText(/email address/i);\n    const passwordInput = screen.getByLabelText(/^password$/i);\n    const submitBtn = screen.getByRole('button', { name: /sign in/i });\n\n    // Type credentials\n    await user.type(emailInput, 'developer@example.com');\n    await user.type(passwordInput, 'secret123');\n\n    // Submit form\n    await user.click(submitBtn);\n\n    // Verify submission handler was called with correct payload\n    expect(handleSubmit).toHaveBeenCalledTimes(1);\n    expect(handleSubmit).toHaveBeenCalledWith({\n      email: 'developer@example.com',\n      password: 'secret123'\n    });\n  });\n\n  it('displays server error message when submission rejects', async () => {\n    const user = userEvent.setup();\n    const handleSubmit = vi.fn().mockRejectedValue(new Error('Invalid email or password'));\n    render(<LoginForm onSubmit={handleSubmit} />);\n\n    await user.type(screen.getByLabelText(/email address/i), 'wrong@example.com');\n    await user.type(screen.getByLabelText(/^password$/i), 'wrongpass');\n    await user.click(screen.getByRole('button', { name: /sign in/i }));\n\n    // Verify server error alert is rendered\n    const alert = await screen.findByRole('alert');\n    expect(alert).toHaveTextContent(/invalid email or password/i);\n  });\n});\n```",
+        "comparisonTable": [
+          {
+            "method": "user.type(input, 'text')",
+            "purpose": "Types text character-by-character firing all keyboard events"
+          },
+          {
+            "method": "user.clear(input)",
+            "purpose": "Selects all text and backspaces, triggering change events"
+          },
+          {
+            "method": "user.click(element)",
+            "purpose": "Hovers, focuses, clicks (fails safely if element is disabled)"
+          },
+          {
+            "method": "user.keyboard('{Enter}')",
+            "purpose": "Simulates pressing physical keyboard keys like Enter or Escape"
+          }
+        ],
+        "code": "// Quick snippet: Simulating keyboard navigation\nimport userEvent from '@testing-library/user-event';\n\ntest('submitting form via Enter key', async () => {\n  const user = userEvent.setup();\n  render(<LoginForm onSubmit={handleSubmit} />);\n  \n  const emailInput = screen.getByLabelText(/email address/i);\n  await user.type(emailInput, 'john@example.com{Enter}');\n  \n  // Enter key in input triggers form submit!\n});",
+        "keyTakeaways": [
+          "userEvent provides authentic browser simulation that respects disabled states and dispatches keydown/keyup events.",
+          "Use vi.fn() to create mock submission handlers and inspect toHaveBeenCalledWith(payload).",
+          "Always test validation error display and ensure invalid forms do NOT trigger the submission handler.",
+          "Use findByRole('alert') when expecting error messages that appear after asynchronous rejected promises."
+        ]
+      },
+      {
+        "id": "16.6",
+        "title": "44. Async State Updates, Timers & Promises",
+        "content": "### 1. The Challenge of Asynchronous React Code\nIn modern applications, state updates do not always happen synchronously. Components fetch data across the network, debounce user input with `setTimeout`, and run CSS transitions.\n\nIf you assert on an element before the asynchronous operation has resolved:\n```javascript\n// 💥 FAILS: The search results have not fetched yet!\nexpect(screen.getByText('Result 1')).toBeInTheDocument();\n```\n\n### 2. The Three Solutions for Async Assertions\n1. **`findBy...` Queries**: Automatically polls the DOM every 50ms for up to 1,000ms until the element appears:\n   ```javascript\n   const result = await screen.findByText('Result 1');\n   expect(result).toBeInTheDocument();\n   ```\n2. **`waitFor(() => expect(...))`**: Retries the assertion callback function until it passes or times out:\n   ```javascript\n   await waitFor(() => {\n     expect(screen.getByText('Saved!')).toBeInTheDocument();\n   });\n   ```\n3. **`waitForElementToBeRemoved(() => ...)`**: Waits for loading spinners or skeleton screens to disappear:\n   ```javascript\n   await waitForElementToBeRemoved(() => screen.queryByRole('progressbar'));\n   ```\n\n### 3. Understanding the Dreaded `act(...)` Warning\nHave you ever seen this warning in your test output?\n```\nconsole.error: Warning: An update to SearchBar inside a test was not wrapped in act(...).\nWhen testing, code that causes React state updates should be wrapped into act(...):\nact(() => {\n  /* fire events that update state */\n});\n```\n**Why it happens:** React detected a state update occurring *after* your test completed or outside of a tracked event block.\n**How to fix it:** You almost **NEVER** need to import and call `act()` manually! 99% of `act()` warnings are caused by:\n1. Forgetting to `await` an async user event: `await user.click(btn)` (NOT `user.click(btn)`).\n2. Forgetting to wait for a state update with `await screen.findByRole(...)` or `await waitFor(...)`.\n3. An uncleaned timer or unresolved network promise running after the test finishes.\n\n### 4. Testing Debounced Input with Vitest Fake Timers\nWhen testing inputs that debounce (e.g. waiting 500ms before calling an API), waiting 500ms of real clock time slows down your test suite.\nUse **Vitest Fake Timers** to fast-forward time instantly:\n```jsx\nimport { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';\nimport { render, screen } from '@testing-library/react';\nimport userEvent from '@testing-library/user-event';\nimport React, { useState, useEffect } from 'react';\n\n// Debounced Search Component\nfunction DebouncedSearch({ onSearch }) {\n  const [query, setQuery] = useState('');\n\n  useEffect(() => {\n    const timer = setTimeout(() => {\n      if (query.trim()) onSearch(query);\n    }, 400);\n\n    return () => clearTimeout(timer);\n  }, [query, onSearch]);\n\n  return (\n    <input\n      type=\"search\"\n      placeholder=\"Search products...\"\n      value={query}\n      onChange={(e) => setQuery(e.target.value)}\n      aria-label=\"Search products\"\n    />\n  );\n}\n\n// Test Suite\ndescribe('DebouncedSearch Component', () => {\n  beforeEach(() => {\n    vi.useFakeTimers(); // Intercepts setTimeout and setInterval\n  });\n\n  afterEach(() => {\n    vi.useRealTimers(); // Restores native timers\n  });\n\n  it('triggers search callback only after 400ms debounce period', async () => {\n    // Note: userEvent requires advanceTimers option when fake timers are active\n    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });\n    const handleSearch = vi.fn();\n    render(<DebouncedSearch onSearch={handleSearch} />);\n\n    const searchInput = screen.getByLabelText(/search products/i);\n\n    // Type query\n    await user.type(searchInput, 'laptop');\n    expect(handleSearch).not.toHaveBeenCalled(); // Not called immediately!\n\n    // Fast-forward 200ms (debounce hasn't finished yet)\n    vi.advanceTimersByTime(200);\n    expect(handleSearch).not.toHaveBeenCalled();\n\n    // Fast-forward remaining 200ms (total 400ms reached!)\n    vi.advanceTimersByTime(200);\n    expect(handleSearch).toHaveBeenCalledTimes(1);\n    expect(handleSearch).toHaveBeenCalledWith('laptop');\n  });\n});\n```",
+        "comparisonTable": [
+          {
+            "asyncTool": "screen.findByRole()",
+            "bestFor": "Waiting for a single element to appear in DOM",
+            "timeout": "1000ms default"
+          },
+          {
+            "asyncTool": "waitFor(() => expect())",
+            "bestFor": "Retrying complex or multiple assertions until true",
+            "timeout": "1000ms default"
+          },
+          {
+            "asyncTool": "waitForElementToBeRemoved()",
+            "bestFor": "Waiting for loading spinners or modals to vanish",
+            "timeout": "1000ms default"
+          },
+          {
+            "asyncTool": "vi.useFakeTimers()",
+            "bestFor": "Controlling setTimeout/setInterval synchronously",
+            "timeout": "Instant clock jump"
+          }
+        ],
+        "code": "// Practical waitFor example\nimport { render, screen, waitFor } from '@testing-library/react';\n\ntest('waiting for multiple attributes to update', async () => {\n  render(<AsyncNotification />);\n  \n  await waitFor(() => {\n    const banner = screen.getByRole('alert');\n    expect(banner).toBeInTheDocument();\n    expect(banner).toHaveClass('alert-success');\n  });\n});",
+        "keyTakeaways": [
+          "Never write arbitrary sleep(1000) delays in tests; use findBy or waitFor.",
+          "findBy automatically retries until an element appears, making async tests reliable and deterministic.",
+          "act(...) warnings indicate unawaited promises or unhandled timer state updates.",
+          "vi.useFakeTimers() allows you to test 5-second debounces or intervals in 2 milliseconds."
+        ]
+      },
+      {
+        "id": "16.7",
+        "title": "45. Testing API Requests with Mock Service Worker (MSW)",
+        "content": "### 1. Why `fetch` Mocks Fail & Why MSW is Industry Standard\nIn naive testing, developers mock `global.fetch` directly:\n```javascript\n// ❌ FRAGILE: Hand-written fetch mock\nglobal.fetch = vi.fn().mockResolvedValue({\n  json: () => Promise.resolve([{ id: 1, name: 'Alice' }])\n});\n```\n**Why this causes production bugs:**\n- Real network requests have headers, HTTP status codes (200, 404, 500), latency, and network dropouts.\n- If your code switches from `fetch` to `axios`, or updates URL query parameters, hand-written fetch mocks continue returning fake data without validating your actual request URL!\n- **Mock Service Worker (MSW)** intercepts HTTP requests at the network layer (using Service Workers in browser or interceptors in Node.js). Your component makes **real HTTP calls**, and MSW intercepts them seamlessly.\n\n### 2. Setting Up MSW in Vitest\nInstall MSW:\n```bash\nnpm install -D msw\n```\n\nCreate `src/mocks/handlers.js`:\n```javascript\nimport { http, HttpResponse } from 'msw';\n\nexport const handlers = [\n  http.get('https://api.example.com/users', () => {\n    return HttpResponse.json([\n      { id: 1, name: 'Alice Johnson', role: 'Engineer' },\n      { id: 2, name: 'Bob Smith', role: 'Designer' }\n    ]);\n  }),\n];\n```\n\nCreate `src/mocks/server.js`:\n```javascript\nimport { setupServer } from 'msw/node';\nimport { handlers } from './handlers';\n\nexport const server = setupServer(...handlers);\n```\n\nIn `src/setupTests.js`:\n```javascript\nimport { server } from './mocks/server';\n\nbeforeAll(() => server.listen({ onUnhandledRequest: 'error' }));\nafterEach(() => server.resetHandlers());\nafterAll(() => server.close());\n```\n\n### 3. Component File: `src/components/UserDirectory.jsx`\n```jsx\nimport React, { useState, useEffect } from 'react';\n\nexport function UserDirectory() {\n  const [users, setUsers] = useState([]);\n  const [status, setStatus] = useState('loading'); // 'loading' | 'success' | 'error'\n  const [errorMessage, setErrorMessage] = useState('');\n\n  const fetchUsers = async () => {\n    setStatus('loading');\n    setErrorMessage('');\n    try {\n      const res = await fetch('https://api.example.com/users');\n      if (!res.ok) throw new Error(`Server error: ${res.status}`);\n      const data = await res.json();\n      setUsers(data);\n      setStatus('success');\n    } catch (err) {\n      setErrorMessage(err.message || 'Failed to load users');\n      setStatus('error');\n    }\n  };\n\n  useEffect(() => {\n    fetchUsers();\n  }, []);\n\n  if (status === 'loading') {\n    return <div role=\"status\" aria-label=\"Loading users\">Loading directory...</div>;\n  }\n\n  if (status === 'error') {\n    return (\n      <div role=\"alert\" style={{ color: 'red' }}>\n        <p>{errorMessage}</p>\n        <button type=\"button\" onClick={fetchUsers}>Retry</button>\n      </div>\n    );\n  }\n\n  if (users.length === 0) {\n    return <p>No users found in directory.</p>;\n  }\n\n  return (\n    <section>\n      <h2>Team Members ({users.length})</h2>\n      <ul aria-label=\"Team members list\">\n        {users.map(u => (\n          <li key={u.id}>\n            <strong>{u.name}</strong> — <span>{u.role}</span>\n          </li>\n        ))}\n      </ul>\n    </section>\n  );\n}\n```\n\n### 4. Test File: `src/components/UserDirectory.test.jsx`\n```jsx\nimport { describe, it, expect } from 'vitest';\nimport { render, screen } from '@testing-library/react';\nimport userEvent from '@testing-library/user-event';\nimport { http, HttpResponse } from 'msw';\nimport { server } from '../mocks/server';\nimport React from 'react';\nimport { UserDirectory } from './UserDirectory';\n\ndescribe('UserDirectory Component', () => {\n  it('displays loading state initially and then renders user list on success', async () => {\n    render(<UserDirectory />);\n\n    // 1. Assert loading spinner is shown immediately\n    expect(screen.getByRole('status', { name: /loading users/i })).toBeInTheDocument();\n\n    // 2. Wait for users to be fetched and rendered\n    const heading = await screen.findByRole('heading', { name: /team members \\(2\\)/i });\n    expect(heading).toBeInTheDocument();\n\n    // 3. Assert user items are present in DOM\n    expect(screen.getByText('Alice Johnson')).toBeInTheDocument();\n    expect(screen.getByText('Bob Smith')).toBeInTheDocument();\n  });\n\n  it('renders empty message when API returns an empty array', async () => {\n    // Override handler for this single test:\n    server.use(\n      http.get('https://api.example.com/users', () => {\n        return HttpResponse.json([]);\n      })\n    );\n\n    render(<UserDirectory />);\n\n    const emptyMessage = await screen.findByText(/no users found in directory/i);\n    expect(emptyMessage).toBeInTheDocument();\n  });\n\n  it('handles server 500 error and allows retrying', async () => {\n    const user = userEvent.setup();\n\n    // 1. Fail first request with 500 error:\n    server.use(\n      http.get('https://api.example.com/users', () => {\n        return new HttpResponse(null, { status: 500 });\n      })\n    );\n\n    render(<UserDirectory />);\n\n    // 2. Assert error alert is displayed\n    const alert = await screen.findByRole('alert');\n    expect(alert).toHaveTextContent(/server error: 500/i);\n\n    // 3. Restore working handler before clicking retry:\n    server.use(\n      http.get('https://api.example.com/users', () => {\n        return HttpResponse.json([{ id: 99, name: 'Recovered User', role: 'QA' }]);\n      })\n    );\n\n    // 4. Click retry button\n    const retryBtn = screen.getByRole('button', { name: /retry/i });\n    await user.click(retryBtn);\n\n    // 5. Assert recovered user renders\n    expect(await screen.findByText('Recovered User')).toBeInTheDocument();\n  });\n});\n```",
+        "comparisonTable": [
+          {
+            "approach": "Mock Service Worker (MSW)",
+            "fidelity": "Extremely High (Intercepts real network requests)",
+            "maintenance": "Low (Centralized handlers)"
+          },
+          {
+            "approach": "global.fetch = vi.fn()",
+            "fidelity": "Low (Bypasses HTTP headers and network serialization)",
+            "maintenance": "High (Must recreate response objects in every test)"
+          },
+          {
+            "approach": "Axios Mock Adapter",
+            "fidelity": "Medium (Tied strictly to Axios; breaks if fetch is used)",
+            "maintenance": "Medium"
+          }
+        ],
+        "code": "// Overriding MSW handlers per test\nimport { http, HttpResponse } from 'msw';\nimport { server } from '../mocks/server';\n\ntest('handling network timeout', async () => {\n  server.use(\n    http.get('https://api.example.com/users', () => {\n      return HttpResponse.error(); // Simulates network failure / offline\n    })\n  );\n  \n  render(<UserDirectory />);\n  expect(await screen.findByRole('alert')).toHaveTextContent(/failed to load users/i);\n});",
+        "keyTakeaways": [
+          "Mock Service Worker intercepts requests at the network boundary, testing real component fetch/axios code.",
+          "server.use() enables overriding handlers for specific error, empty, or timeout scenarios within individual tests.",
+          "server.resetHandlers() inside afterEach() guarantees that test overrides never leak into subsequent tests.",
+          "Always test all four UI states: Loading, Success, Empty, and Error with Retry."
+        ]
+      },
+      {
+        "id": "16.8",
+        "title": "46. Testing Custom Hooks with renderHook",
+        "content": "### 1. When and How to Test Custom Hooks\nReact hooks cannot be called outside of a React component. \nIf you try to execute `const result = useCounter();` directly in a test function, React will crash with:\n`Invalid hook call. Hooks can only be called inside of the body of a function component.`\n\nRTL provides **`renderHook()`**, which creates a lightweight internal test component wrapper around your hook.\n\n### 2. Hook File: `src/hooks/useCounter.js`\n```javascript\nimport { useState, useCallback } from 'react';\n\nexport function useCounter({ initialValue = 0, step = 1, min = -Infinity, max = Infinity } = {}) {\n  const [count, setCount] = useState(initialValue);\n\n  const increment = useCallback(() => {\n    setCount(c => Math.min(max, c + step));\n  }, [max, step]);\n\n  const decrement = useCallback(() => {\n    setCount(c => Math.max(min, c - step));\n  }, [min, step]);\n\n  const reset = useCallback(() => {\n    setCount(initialValue);\n  }, [initialValue]);\n\n  return { count, increment, decrement, reset };\n}\n```\n\n### 3. Test File: `src/hooks/useCounter.test.js`\n```javascript\nimport { describe, it, expect } from 'vitest';\nimport { renderHook, act } from '@testing-library/react';\nimport { useCounter } from './useCounter';\n\ndescribe('useCounter Custom Hook', () => {\n  it('initializes with default value of 0', () => {\n    const { result } = renderHook(() => useCounter());\n\n    expect(result.current.count).toBe(0);\n  });\n\n  it('increments count using custom step', () => {\n    const { result } = renderHook(() => useCounter({ initialValue: 10, step: 5 }));\n\n    // Any hook function that updates state must be wrapped in act()\n    act(() => {\n      result.current.increment();\n    });\n\n    expect(result.current.count).toBe(15);\n  });\n\n  it('respects maximum constraint boundary', () => {\n    const { result } = renderHook(() => useCounter({ initialValue: 9, max: 10 }));\n\n    act(() => {\n      result.current.increment(); // 9 -> 10\n    });\n    expect(result.current.count).toBe(10);\n\n    act(() => {\n      result.current.increment(); // Attempting to exceed max\n    });\n    expect(result.current.count).toBe(10); // Capped at max 10\n  });\n\n  it('resets count back to initial value', () => {\n    const { result } = renderHook(() => useCounter({ initialValue: 50 }));\n\n    act(() => {\n      result.current.increment();\n      result.current.increment();\n    });\n    expect(result.current.count).toBe(52);\n\n    act(() => {\n      result.current.reset();\n    });\n    expect(result.current.count).toBe(50);\n  });\n});\n```\n\n### 4. Testing Pure Reducers Independently (Zero DOM Overhead!)\nIf your component uses complex state logic via a pure reducer function (such as in `useReducer` or Redux), **you do not even need `renderHook` or a DOM container!**\nBecause a reducer is a 100% pure function `(state, action) => newState`, you can test it directly with simple assertions:\n```javascript\nimport { describe, it, expect } from 'vitest';\nimport { cartReducer, initialState } from './cartReducer';\n\ndescribe('cartReducer', () => {\n  it('adds an item to an empty cart', () => {\n    const action = { type: 'ADD_ITEM', payload: { id: 101, name: 'Keyboard', price: 99 } };\n    const nextState = cartReducer(initialState, action);\n\n    expect(nextState.items).toHaveLength(1);\n    expect(nextState.items[0]).toEqual({ id: 101, name: 'Keyboard', price: 99, quantity: 1 });\n    expect(nextState.totalPrice).toBe(99);\n  });\n});\n```",
+        "comparisonTable": [
+          {
+            "method": "renderHook(() => useMyHook())",
+            "purpose": "Mounts hook in temporary test component",
+            "accessPattern": "result.current.value"
+          },
+          {
+            "method": "act(() => { ... })",
+            "purpose": "Batches hook state changes and executes effects",
+            "accessPattern": "Wraps hook mutation calls"
+          },
+          {
+            "method": "Testing Reducer directly",
+            "purpose": "Tests state transitions without mounting any component",
+            "accessPattern": "const next = reducer(prev, action)"
+          }
+        ],
+        "code": "// Testing hooks with props updates via rerender\nimport { renderHook } from '@testing-library/react';\n\ntest('updating hook options with rerender', () => {\n  const { result, rerender } = renderHook(\n    ({ step }) => useCounter({ step }),\n    { initialProps: { step: 1 } }\n  );\n\n  act(() => result.current.increment());\n  expect(result.current.count).toBe(1);\n\n  // Change hook prop dynamically:\n  rerender({ step: 10 });\n  act(() => result.current.increment());\n  expect(result.current.count).toBe(11);\n});",
+        "keyTakeaways": [
+          "renderHook() enables testing hook logic in isolation without writing disposable test components.",
+          "Always wrap hook state mutation calls inside act(() => { ... }).",
+          "result.current always points to the latest return value of the hook.",
+          "Pure reducers should be tested directly as standard JavaScript functions without requiring any DOM mounting."
+        ]
+      },
+      {
+        "id": "16.9",
+        "title": "47. Testing Redux Toolkit & Zustand Stores",
+        "content": "### 1. The #1 Trap: Leaky Shared State\nWhen testing components connected to a global state store (Redux Toolkit or Zustand), **never share a single singleton store instance across multiple test files!**\n- If Test 1 adds 3 items to the cart, and Test 2 runs expecting an empty cart, Test 2 will fail because Test 1 left dirty state in memory.\n- Every test must receive a **fresh, isolated store instance**.\n\n### 2. Testing Redux Toolkit Components with a Custom Wrapper\nCreate a helper function `renderWithProviders(ui, { preloadedState, store })`:\n```jsx\nimport React from 'react';\nimport { render } from '@testing-library/react';\nimport { Provider } from 'react-redux';\nimport { configureStore } from '@reduxjs/toolkit';\nimport cartReducer from '../features/cart/cartSlice';\n\nexport function renderWithProviders(\n  ui,\n  {\n    preloadedState = {},\n    store = configureStore({\n      reducer: { cart: cartReducer },\n      preloadedState,\n    }),\n    ...renderOptions\n  } = {}\n) {\n  function Wrapper({ children }) {\n    return <Provider store={store}>{children}</Provider>;\n  }\n\n  return { store, ...render(ui, { wrapper: Wrapper, ...renderOptions }) };\n}\n```\n\n**Now write clean, isolated component tests:**\n```jsx\nimport { describe, it, expect } from 'vitest';\nimport { screen } from '@testing-library/react';\nimport userEvent from '@testing-library/user-event';\nimport React from 'react';\nimport { renderWithProviders } from '../test-utils';\nimport { CartBadge } from './CartBadge';\n\ndescribe('CartBadge with Redux', () => {\n  it('renders zero items initially with default store', () => {\n    renderWithProviders(<CartBadge />);\n    expect(screen.getByRole('status')).toHaveTextContent('Cart: 0 items');\n  });\n\n  it('renders preloaded items from initial store state', () => {\n    renderWithProviders(<CartBadge />, {\n      preloadedState: {\n        cart: {\n          items: [{ id: 1, name: 'Shoes', quantity: 2 }]\n        }\n      }\n    });\n\n    expect(screen.getByRole('status')).toHaveTextContent('Cart: 2 items');\n  });\n});\n```\n\n### 3. Testing Zustand Stores\nZustand stores are plain JavaScript hooks. To prevent state leakage between tests, reset the store in `beforeEach()`:\n```javascript\nimport { describe, it, expect, beforeEach } from 'vitest';\nimport { act } from '@testing-library/react';\nimport { useCartStore } from './cartStore';\n\nconst initialStoreState = useCartStore.getState();\n\ndescribe('useCartStore Zustand', () => {\n  beforeEach(() => {\n    // Reset Zustand store to clean initial state before each test!\n    useCartStore.setState(initialStoreState, true);\n  });\n\n  it('adds item to cart and updates total price', () => {\n    act(() => {\n      useCartStore.getState().addItem({ id: 1, name: 'Mouse', price: 50 });\n    });\n\n    const state = useCartStore.getState();\n    expect(state.items).toHaveLength(1);\n    expect(state.total).toBe(50);\n  });\n});\n```",
+        "comparisonTable": [
+          {
+            "store": "Redux Toolkit",
+            "isolationPattern": "Create fresh store via configureStore() inside custom render wrapper",
+            "testingFocus": "Slices, selectors, and connected components"
+          },
+          {
+            "store": "Zustand",
+            "isolationPattern": "Call useStore.setState(initialState, true) inside beforeEach()",
+            "testingFocus": "Direct action dispatch & atomic selectors"
+          }
+        ],
+        "code": "// Testing a component connected to Zustand\nimport { render, screen } from '@testing-library/react';\nimport userEvent from '@testing-library/user-event';\nimport { CartButton } from './CartButton';\nimport { useCartStore } from './cartStore';\n\ntest('clicking button updates Zustand store', async () => {\n  const user = userEvent.setup();\n  render(<CartButton item={{ id: 9, name: 'Desk', price: 200 }} />);\n\n  await user.click(screen.getByRole('button', { name: /add to cart/i }));\n  expect(useCartStore.getState().items).toHaveLength(1);\n});",
+        "keyTakeaways": [
+          "Never share a singleton Redux or Zustand store instance across test cases.",
+          "Use a custom renderWithProviders helper that instantiates a fresh configureStore() for each test.",
+          "For Zustand, store the initial state snapshot and restore it in beforeEach via useStore.setState(initial, true).",
+          "Test connected components by asserting on rendered DOM output rather than checking store internals directly."
+        ]
+      },
+      {
+        "id": "16.10",
+        "title": "48. Testing React Router Navigation & Protected Routes",
+        "content": "### 1. Why `<BrowserRouter>` Fails in Node.js Tests\nIn a production web browser, `<BrowserRouter>` connects directly to the real browser URL address bar using the native HTML5 History API (`window.history.pushState`).\nIn Node.js test environments, there is no real address bar. If you render a component containing `<Link>`, `useNavigate()`, or `useParams()` without a router context, React will throw:\n`useNavigate() may be used only in the context of a <Router> component.`\n\n### 2. The Solution: `<MemoryRouter>`\nReact Router provides **`<MemoryRouter>`** specifically for testing and non-browser environments. It keeps the history stack entirely in memory and allows you to declare starting URLs via `initialEntries`:\n```jsx\nimport { MemoryRouter } from 'react-router-dom';\n\nrender(\n  <MemoryRouter initialEntries={['/users/42']}>\n    <UserProfileRoute />\n  </MemoryRouter>\n);\n```\n\n### 3. Component & Routing Setup: `src/routes/AppRoutes.jsx`\n```jsx\nimport React from 'react';\nimport { Routes, Route, Link, useParams, Navigate } from 'react-router-dom';\n\nexport function UserProfile() {\n  const { userId } = useParams();\n  return (\n    <div>\n      <h2>User Profile ID: {userId}</h2>\n      <Link to=\"/settings\">Go to Settings</Link>\n    </div>\n  );\n}\n\nexport function ProtectedSettings({ isAuthenticated }) {\n  if (!isAuthenticated) {\n    return <Navigate to=\"/login\" replace />;\n  }\n  return <h2>Account Settings</h2>;\n}\n\nexport function AppRoutes({ isAuthenticated = false }) {\n  return (\n    <Routes>\n      <Route path=\"/\" element={<h2>Home Page</h2>} />\n      <Route path=\"/login\" element={<h2>Login Page</h2>} />\n      <Route path=\"/users/:userId\" element={<UserProfile />} />\n      <Route \n        path=\"/settings\" \n        element={<ProtectedSettings isAuthenticated={isAuthenticated} />} \n      />\n      <Route path=\"*\" element={<h2>404 Not Found</h2>} />\n    </Routes>\n  );\n}\n```\n\n### 4. Test File: `src/routes/AppRoutes.test.jsx`\n```jsx\nimport { describe, it, expect } from 'vitest';\nimport { render, screen } from '@testing-library/react';\nimport userEvent from '@testing-library/user-event';\nimport { MemoryRouter } from 'react-router-dom';\nimport React from 'react';\nimport { AppRoutes } from './AppRoutes';\n\ndescribe('AppRoutes Navigation Suite', () => {\n  it('renders user profile with dynamic URL parameter', () => {\n    // Mount router at /users/99\n    render(\n      <MemoryRouter initialEntries={['/users/99']}>\n        <AppRoutes />\n      </MemoryRouter>\n    );\n\n    expect(screen.getByRole('heading', { name: /user profile id: 99/i })).toBeInTheDocument();\n  });\n\n  it('navigates from user profile to settings when link is clicked', async () => {\n    const user = userEvent.setup();\n    render(\n      <MemoryRouter initialEntries={['/users/1']}>\n        <AppRoutes isAuthenticated={true} />\n      </MemoryRouter>\n    );\n\n    const settingsLink = screen.getByRole('link', { name: /go to settings/i });\n    await user.click(settingsLink);\n\n    // Verify destination route is rendered\n    expect(screen.getByRole('heading', { name: /account settings/i })).toBeInTheDocument();\n  });\n\n  it('redirects unauthenticated users from /settings to /login', () => {\n    render(\n      <MemoryRouter initialEntries={['/settings']}>\n        <AppRoutes isAuthenticated={false} />\n      </MemoryRouter>\n    );\n\n    // Assert user was redirected to Login Page\n    expect(screen.getByRole('heading', { name: /login page/i })).toBeInTheDocument();\n    expect(screen.queryByRole('heading', { name: /account settings/i })).not.toBeInTheDocument();\n  });\n\n  it('renders 404 page for nonexistent routes', () => {\n    render(\n      <MemoryRouter initialEntries={['/random-unknown-page']}>\n        <AppRoutes />\n      </MemoryRouter>\n    );\n\n    expect(screen.getByRole('heading', { name: /404 not found/i })).toBeInTheDocument();\n  });\n});\n```",
+        "comparisonTable": [
+          {
+            "router": "<BrowserRouter>",
+            "environment": "Web browser only (uses window.history)",
+            "testingSuitability": "Unsuitable for automated testing"
+          },
+          {
+            "router": "<MemoryRouter>",
+            "environment": "In-memory history (Node.js & Tests)",
+            "testingSuitability": "Ideal for testing route transitions and URL params"
+          }
+        ],
+        "code": "// Reusable renderWithRouter utility\nimport { render } from '@testing-library/react';\nimport { MemoryRouter } from 'react-router-dom';\n\nexport function renderWithRouter(ui, { route = '/' } = {}) {\n  return render(\n    <MemoryRouter initialEntries={[route]}>\n      {ui}\n    </MemoryRouter>\n  );\n}",
+        "keyTakeaways": [
+          "Always wrap router-dependent components in <MemoryRouter> during tests.",
+          "Use initialEntries={['/my-path']} to simulate loading the application at specific deep URLs.",
+          "Verify redirects by asserting that the destination route heading renders and the protected route does not.",
+          "Simulate link clicks with await user.click(screen.getByRole('link', { name: ... }))."
+        ]
+      },
+      {
+        "id": "16.11",
+        "title": "49. Testing UI Component Libraries (MUI Dialogs & Portals)",
+        "content": "### 1. The Challenge of Portals & UI Libraries\nComponents from modern UI libraries (like Material UI, Radix UI, or shadcn/ui) present two unique testing challenges:\n1. **React Portals**: Modal dialogs, menus, and tooltips are rendered outside the root component DOM node, directly into `document.body`.\n2. **Theme Context**: Components like MUI's `<Button>` or `<Typography>` expect a `<ThemeProvider>` in their parent tree.\n\n### 2. Component File: `src/components/ConfirmDeleteDialog.jsx`\n```jsx\nimport React, { useState } from 'react';\nimport {\n  Button,\n  Dialog,\n  DialogTitle,\n  DialogContent,\n  DialogContentText,\n  DialogActions,\n} from '@mui/material';\n\nexport function ConfirmDeleteDialog({ itemName, onDelete }) {\n  const [open, setOpen] = useState(false);\n\n  const handleConfirm = () => {\n    onDelete();\n    setOpen(false);\n  };\n\n  return (\n    <div>\n      <Button \n        variant=\"contained\" \n        color=\"error\" \n        onClick={() => setOpen(true)}\n      >\n        Delete Item\n      </Button>\n\n      <Dialog\n        open={open}\n        onClose={() => setOpen(false)}\n        aria-labelledby=\"confirm-dialog-title\"\n        aria-describedby=\"confirm-dialog-description\"\n      >\n        <DialogTitle id=\"confirm-dialog-title\">\n          Confirm Deletion\n        </DialogTitle>\n        <DialogContent>\n          <DialogContentText id=\"confirm-dialog-description\">\n            Are you sure you want to permanently delete \"{itemName}\"? This action cannot be undone.\n          </DialogContentText>\n        </DialogContent>\n        <DialogActions>\n          <Button onClick={() => setOpen(false)}>Cancel</Button>\n          <Button onClick={handleConfirm} color=\"error\" autoFocus>\n            Confirm Delete\n          </Button>\n        </DialogActions>\n      </Dialog>\n    </div>\n  );\n}\n```\n\n### 3. Test File: `src/components/ConfirmDeleteDialog.test.jsx`\n```jsx\nimport { describe, it, expect, vi } from 'vitest';\nimport { render, screen, waitFor } from '@testing-library/react';\nimport userEvent from '@testing-library/user-event';\nimport React from 'react';\nimport { ConfirmDeleteDialog } from './ConfirmDeleteDialog';\n\ndescribe('ConfirmDeleteDialog MUI Component', () => {\n  it('does not render dialog modal initially', () => {\n    render(<ConfirmDeleteDialog itemName=\"Financial Report\" onDelete={vi.fn()} />);\n\n    expect(screen.getByRole('button', { name: /delete item/i })).toBeInTheDocument();\n    // Modal is closed, so role=\"dialog\" should NOT be in the DOM\n    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();\n  });\n\n  it('opens dialog portal when trigger button is clicked', async () => {\n    const user = userEvent.setup();\n    render(<ConfirmDeleteDialog itemName=\"Financial Report\" onDelete={vi.fn()} />);\n\n    // Click trigger\n    await user.click(screen.getByRole('button', { name: /delete item/i }));\n\n    // Assert dialog appears in document.body\n    const dialog = screen.getByRole('dialog', { name: /confirm deletion/i });\n    expect(dialog).toBeInTheDocument();\n    expect(screen.getByText(/are you sure you want to permanently delete \"financial report\"/i)).toBeInTheDocument();\n  });\n\n  it('closes dialog without executing callback when Cancel is clicked', async () => {\n    const user = userEvent.setup();\n    const handleDelete = vi.fn();\n    render(<ConfirmDeleteDialog itemName=\"Project Alpha\" onDelete={handleDelete} />);\n\n    await user.click(screen.getByRole('button', { name: /delete item/i }));\n    \n    // Click Cancel inside dialog\n    const cancelBtn = screen.getByRole('button', { name: /cancel/i });\n    await user.click(cancelBtn);\n\n    // Dialog closes with transition animation\n    await waitFor(() => {\n      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();\n    });\n\n    expect(handleDelete).not.toHaveBeenCalled();\n  });\n\n  it('calls onDelete callback and closes dialog when confirmed', async () => {\n    const user = userEvent.setup();\n    const handleDelete = vi.fn();\n    render(<ConfirmDeleteDialog itemName=\"Project Alpha\" onDelete={handleDelete} />);\n\n    await user.click(screen.getByRole('button', { name: /delete item/i }));\n    \n    // Click Confirm Delete\n    const confirmBtn = screen.getByRole('button', { name: /confirm delete/i });\n    await user.click(confirmBtn);\n\n    expect(handleDelete).toHaveBeenCalledTimes(1);\n    await waitFor(() => {\n      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();\n    });\n  });\n});\n```",
+        "comparisonTable": [
+          {
+            "pattern": "Portal Queries",
+            "rule": "Query using screen.getByRole('dialog'); screen searches document.body globally!"
+          },
+          {
+            "pattern": "MUI Class Names",
+            "rule": "Never test using .MuiButton-root or .MuiDialog-paper (Internal implementation detail)"
+          },
+          {
+            "pattern": "Transition Delays",
+            "rule": "Use waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument()) to allow fade-out transitions to complete"
+          }
+        ],
+        "code": "// Wrapping MUI with ThemeProvider for theme testing\nimport { render } from '@testing-library/react';\nimport { ThemeProvider, createTheme } from '@mui/material/styles';\n\nconst testTheme = createTheme();\n\nexport function renderWithMUI(ui) {\n  return render(\n    <ThemeProvider theme={testTheme}>\n      {ui}\n    </ThemeProvider>\n  );\n}",
+        "keyTakeaways": [
+          "React Portals render directly into document.body; screen.getByRole finds them without special portal configuration.",
+          "Never assert on private MUI CSS class names (.Mui-disabled, .MuiButton-root); use accessible roles and toBeDisabled().",
+          "MUI Dialogs fade out via CSS transitions; always use waitFor() when asserting that a modal has completely closed."
+        ]
+      },
+      {
+        "id": "16.12",
+        "title": "50. Mocking Concepts in Depth: Functions, Spies & Modules",
+        "content": "### 1. The Core Mocking Primitives in Vitest\n1. **Mock Function (`vi.fn()`)**: A blank spy function that records every call, arguments, and return value:\n   ```javascript\n   const callback = vi.fn();\n   callback('hello', 42);\n   expect(callback).toHaveBeenCalledWith('hello', 42);\n   ```\n2. **Spy (`vi.spyOn(object, 'method')`)**: Wraps an existing object method (like `window.scrollTo` or `console.error`) to monitor calls without destroying its original implementation:\n   ```javascript\n   const scrollSpy = vi.spyOn(window, 'scrollTo').mockImplementation(() => {});\n   // run component...\n   expect(scrollSpy).toHaveBeenCalled();\n   scrollSpy.mockRestore(); // Restores original window.scrollTo!\n   ```\n3. **Module Mock (`vi.mock('module-name')`)**: Replaces an entire npm package or local file with a mock version:\n   ```javascript\n   vi.mock('../services/analytics', () => ({\n     trackEvent: vi.fn(),\n   }));\n   ```\n\n### 2. `mockClear` vs `mockReset` vs `mockRestore` (The Big Interview Question!)\n\n| Method | Clears Call History? | Resets Custom Mock Implementation? | Restores Original Native Function? |\n| :--- | :--- | :--- | :--- |\n| **`mock.mockClear()`** | ✅ YES (`calls = []`) | ❌ NO (Keeps return value) | ❌ NO |\n| **`mock.mockReset()`** | ✅ YES | ✅ YES (Reverts to empty `undefined`) | ❌ NO |\n| **`mock.mockRestore()`** | ✅ YES | ✅ YES | ✅ **YES** (Only works on `vi.spyOn`) |\n\n### 3. Common Mocking Antipatterns to Avoid\n- **Over-Mocking**: If you mock out every child component, utility function, and library, your test only tests your mocks, not your software!\n- **Mock Leaks**: Always configure Vitest with `restoreMocks: true` or call `vi.clearAllMocks()` in `afterEach()` so that spies created in one test do not count calls in another test.",
+        "comparisonTable": [
+          {
+            "method": "vi.fn()",
+            "useCase": "Passing callbacks into props (onClick, onSubmit)"
+          },
+          {
+            "method": "vi.spyOn(obj, 'fn')",
+            "useCase": "Monitoring browser globals (localStorage, window, audio)"
+          },
+          {
+            "method": "vi.mock('module')",
+            "useCase": "Mocking heavyweight third-party SDKs (Stripe, Google Maps, Sentry)"
+          }
+        ],
+        "code": "// Mocking localStorage with vi.spyOn\nimport { describe, it, expect, vi, beforeEach } from 'vitest';\n\ndescribe('LocalStorage Mocking', () => {\n  beforeEach(() => {\n    vi.clearAllMocks();\n  });\n\n  it('reads and writes to localStorage', () => {\n    const getItemSpy = vi.spyOn(Storage.prototype, 'getItem').mockReturnValue('dark');\n    const setItemSpy = vi.spyOn(Storage.prototype, 'setItem');\n\n    const theme = localStorage.getItem('theme');\n    expect(theme).toBe('dark');\n    expect(getItemSpy).toHaveBeenCalledWith('theme');\n\n    localStorage.setItem('theme', 'light');\n    expect(setItemSpy).toHaveBeenCalledWith('theme', 'light');\n  });\n});",
+        "keyTakeaways": [
+          "vi.fn() creates a mock callback that tracks invocations and arguments.",
+          "vi.spyOn tracks existing object methods and can be restored using mockRestore().",
+          "mockClear clears call history; mockReset clears return values; mockRestore restores the original implementation.",
+          "Avoid over-mocking: only mock external boundaries (network APIs, timers, browser hardware)."
+        ]
+      },
+      {
+        "id": "16.13",
+        "title": "51. The 20 Real-World Testing Exercises Reference Matrix",
+        "content": "### The 20-Exercise Progressive Mastery Syllabus\nWork through these 20 practical testing challenges to achieve complete senior testing fluency:\n\n| # | Exercise Name | Target Component | Core Concept & RTL Method |\n| :--- | :--- | :--- | :--- |\n| **1** | Simple Button | `<PrimaryButton>` | `getByRole('button')`, `user.click()`, `toBeDisabled()` |\n| **2** | State Counter | `<Counter>` | Initial count, step increment, decrement boundary |\n| **3** | Controlled Input | `<SearchInput>` | `user.type()`, `user.clear()`, `toHaveValue()` |\n| **4** | Validated Registration Form | `<RegisterForm>` | Email & password regex, required field alerts |\n| **5** | 4-State Data Fetching | `<ProductList>` | Loading spinner, success items, empty state, error alert |\n| **6** | Pagination & Search | `<PaginatedTable>` | Page transitions, query string filtering, `within()` scoping |\n| **7** | Accessible Modal Dialog | `<ConfirmModal>` | Portals, focus trap, escape key with `user.keyboard('{Escape}')` |\n| **8** | Accordion Collapsible | `<FaqAccordion>` | `aria-expanded`, clicking header reveals hidden panel |\n| **9** | Tabbed Navigation | `<ProfileTabs>` | `role=\"tab\"`, `role=\"tabpanel\"`, arrow key navigation |\n| **10** | Custom Debounced Hook | `useDebounce(val, delay)` | `renderHook()`, `vi.useFakeTimers()`, `vi.advanceTimersByTime()` |\n| **11** | LocalStorage Persistence Hook | `useLocalStorage(key, init)` | `vi.spyOn(Storage.prototype, 'setItem')` |\n| **12** | Redux Toolkit Shopping Cart | `<CartSummary>` | `renderWithProviders`, preloaded state, quantity updates |\n| **13** | Zustand Task Manager | `<TaskList>` | Store reset in `beforeEach`, filter active/completed |\n| **14** | React Router Protected Page | `<ProtectedRoute>` | `<MemoryRouter>`, unauthenticated redirect to `/login` |\n| **15** | MUI AutoComplete Select | `<CountrySelect>` | Virtualized dropdown, keyboard arrows, selection change |\n| **16** | Debounced API Search with Race Conditions | `<LiveUserSearch>` | MSW delay, ensuring stale promise does not overwrite latest input |\n| **17** | File Upload Widget | `<AvatarUploader>` | `user.upload(input, file)`, file size and MIME type validation |\n| **18** | Infinite Scroll Observer | `<InfiniteFeed>` | Mocking `IntersectionObserver`, loading next page batch |\n| **19** | Dark Mode Theme Toggle | `<ThemeSwitcher>` | Context provider wrapper, class toggling on root container |\n| **20** | Full Checkout Integration Flow | `<CheckoutWizard>` | Multi-step form, credit card validation, MSW order post, success screen |",
+        "comparisonTable": [
+          {
+            "level": "Beginner (Exercises 1-5)",
+            "focus": "DOM rendering, button clicks, form typing, initial state assertions"
+          },
+          {
+            "level": "Intermediate (Exercises 6-13)",
+            "focus": "Async state, MSW network mocking, fake timers, custom hooks with renderHook"
+          },
+          {
+            "level": "Senior (Exercises 14-20)",
+            "focus": "Router redirects, Redux/Zustand providers, Portals, race condition testing, multi-step wizards"
+          }
+        ],
+        "code": "// Template for tackling any exercise in the matrix:\nimport { describe, it, expect, vi } from 'vitest';\nimport { render, screen } from '@testing-library/react';\nimport userEvent from '@testing-library/user-event';\n\ndescribe('Exercise Template', () => {\n  it('implements Arrange-Act-Assert seamlessly', async () => {\n    const user = userEvent.setup();\n    // 1. Arrange\n    // 2. Act\n    // 3. Assert\n  });\n});",
+        "keyTakeaways": [
+          "Progress from simple button unit tests to complex multi-step integration workflows.",
+          "Every exercise reinforces accessibility-first queries (getByRole, getByLabelText).",
+          "Mastering this 20-exercise curriculum guarantees complete interview and production testing readiness."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 17,
+    "title": "Part 17 — React + Redux Toolkit (RTK) Complete Module",
+    "badge": "Redux Toolkit",
+    "color": "#6366f1",
+    "sections": [
+      {
+        "id": "17.1",
+        "title": "43. Modern Redux Toolkit: Slices, Immer & Store Setup",
+        "content": "### 1. Why Redux Toolkit (RTK) Replaced Legacy Redux\nLegacy Redux required hundreds of lines of boilerplate: manual action type constants (`ADD_TODO`), action creators, switch-case reducers, and immutable object spread operations.\n**Redux Toolkit (RTK)** is the official, opinionated, modern standard that eliminates boilerplate through:\n- `configureStore()`: Pre-configures Redux DevTools, redux-thunk, and immutability checks.\n- `createSlice()`: Automatically generates action creators and action types from reducer methods.\n- **Immer Integration**: Allows you to write mutable-looking code (`state.items.push(item)`) safely because Immer tracks mutations on a Proxy draft and produces immutable updates under the hood.",
+        "code": "import { configureStore, createSlice, PayloadAction } from '@reduxjs/toolkit';\nimport { TypedUseSelectorHook, useDispatch, useSelector } from 'react-redux';\n\n// 1. Define slice with Immer mutations\ninterface CartItem { id: string; name: string; price: number; qty: number; }\ninterface CartState { items: CartItem[]; }\n\nconst initialState: CartState = { items: [] };\n\nexport const cartSlice = createSlice({\n  name: 'cart',\n  initialState,\n  reducers: {\n    addItem: (state, action: PayloadAction<CartItem>) => {\n      const existing = state.items.find(i => i.id === action.payload.id);\n      if (existing) {\n        existing.qty += action.payload.qty; // Safe mutation via Immer!\n      } else {\n        state.items.push(action.payload); // Safe push via Immer!\n      }\n    },\n    removeItem: (state, action: PayloadAction<string>) => {\n      state.items = state.items.filter(i => i.id !== action.payload);\n    },\n    clearCart: (state) => {\n      state.items = [];\n    }\n  }\n});\n\nexport const { addItem, removeItem, clearCart } = cartSlice.actions;\n\n// 2. Configure Store\nexport const store = configureStore({\n  reducer: {\n    cart: cartSlice.reducer\n  }\n});\n\n// 3. Typed Hooks for TypeScript\nexport type RootState = ReturnType<typeof store.getState>;\nexport type AppDispatch = typeof store.dispatch;\n\nexport const useAppDispatch = () => useDispatch<AppDispatch>();\nexport const useAppSelector: TypedUseSelectorHook<RootState> = useSelector;",
+        "keyTakeaways": [
+          "Redux Toolkit eliminates 80% of legacy Redux boilerplate via createSlice and configureStore.",
+          "Inside createSlice reducers, draft mutations (state.push) are safe because Immer handles immutability.",
+          "Always create and export typed hooks (useAppDispatch, useAppSelector) for strict TypeScript safety."
+        ]
+      },
+      {
+        "id": "17.2",
+        "title": "44. Async Thunks, RTK Query & Caching Mechanics",
+        "content": "### 1. createAsyncThunk for Complex Orchestration\nHandles asynchronous workflows (API calls) by automatically dispatching `pending`, `fulfilled`, and `rejected` action lifecycle states handled in `extraReducers`.\n\n### 2. RTK Query: Purpose-Built Server-State Management\nFor standard CRUD data fetching, caching, polling, and invalidation, **RTK Query** eliminates the need for manual thunks and reducer state handling.",
+        "code": "import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';\n\n// Async Thunk definition\nexport const fetchUserInvoices = createAsyncThunk(\n  'billing/fetchInvoices',\n  async (userId: string, { rejectWithValue }) => {\n    try {\n      const res = await fetch(`/api/billing/${userId}/invoices`);\n      if (!res.ok) throw new Error('Failed to fetch invoices');\n      return await res.json();\n    } catch (err: any) {\n      return rejectWithValue(err.message);\n    }\n  }\n);\n\n// Handling lifecycle in extraReducers:\nconst billingSlice = createSlice({\n  name: 'billing',\n  initialState: { invoices: [], status: 'idle', error: null as string | null },\n  reducers: {},\n  extraReducers: (builder) => {\n    builder\n      .addCase(fetchUserInvoices.pending, (state) => {\n        state.status = 'loading';\n        state.error = null;\n      })\n      .addCase(fetchUserInvoices.fulfilled, (state, action) => {\n        state.status = 'succeeded';\n        state.invoices = action.payload;\n      })\n      .addCase(fetchUserInvoices.rejected, (state, action) => {\n        state.status = 'failed';\n        state.error = action.payload as string;\n      });\n  }\n});",
+        "keyTakeaways": [
+          "createAsyncThunk generates pending/fulfilled/rejected action types automatically.",
+          "RTK Query provides automatic request caching, deduplication, and cache tag invalidation.",
+          "Use RTK Query for server state and standard slices for client-only state."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 18,
+    "title": "Part 18 — React + Zustand State Management",
+    "badge": "Zustand",
+    "color": "#eab308",
+    "sections": [
+      {
+        "id": "18.1",
+        "title": "45. Zustand Architecture: Minimalist Stores & Atomic Selectors",
+        "content": "### 1. What is Zustand and Why is it Popular?\nZustand is a lightweight (1kB), un-opinionated state management library based on the simplified flux principles.\n**Key Architectural Advantages over Redux & Context**:\n1. **Zero Context Providers**: No wrapping your component tree in `<Provider>`; stores are declared outside React at module scope.\n2. **Atomic Selectors**: Components subscribe only to the specific slice of state they select (`useStore(state => state.activeId)`). They NEVER re-render if unselected properties change!\n3. **No Boilerplate**: Actions are defined directly inside the store object as standard functions.",
+        "code": "import { create } from 'zustand';\nimport { devtools, persist } from 'zustand/middleware';\n\ninterface Task { id: string; title: string; completed: boolean; }\n\ninterface TaskStore {\n  tasks: Task[];\n  filter: 'all' | 'pending' | 'completed';\n  addTask: (title: string) => void;\n  toggleTask: (id: string) => void;\n  setFilter: (f: 'all' | 'pending' | 'completed') => void;\n}\n\nexport const useTaskStore = create<TaskStore>()(\n  devtools(\n    persist(\n      (set) => ({\n        tasks: [],\n        filter: 'all',\n        addTask: (title) => set(\n          state => ({ tasks: [...state.tasks, { id: crypto.randomUUID(), title, completed: false }] }),\n          false,\n          'tasks/addTask'\n        ),\n        toggleTask: (id) => set(\n          state => ({\n            tasks: state.tasks.map(t => t.id === id ? { ...t, completed: !t.completed } : t)\n          }),\n          false,\n          'tasks/toggleTask'\n        ),\n        setFilter: (filter) => set({ filter }, false, 'tasks/setFilter')\n      }),\n      { name: 'chrona_tasks_storage' } // Automatic LocalStorage persistence!\n    )\n  )\n);\n\n// In Component: Atomic Selector (Only re-renders when task count changes!)\nfunction TaskCounter() {\n  const taskCount = useTaskStore(state => state.tasks.length);\n  return <div>Total Tasks: {taskCount}</div>;\n}",
+        "comparisonTable": [
+          {
+            "aspect": "Zustand",
+            "detail": "1kB bundle; no Providers; atomic selector subscriptions; built-in persist and devtools middleware."
+          },
+          {
+            "aspect": "Redux Toolkit",
+            "detail": "Structured enterprise conventions; strict action serialization; best for massive multidisciplinary teams."
+          },
+          {
+            "aspect": "React Context",
+            "detail": "Built-in; fine for low-frequency global settings; causes re-render cascades on high-frequency state."
+          }
+        ],
+        "keyTakeaways": [
+          "Zustand stores live outside React components and require zero Provider wrappers.",
+          "Atomic selector subscriptions prevent unnecessary component re-renders completely.",
+          "Built-in persist middleware saves and rehydrates state from localStorage with one line of configuration."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 19,
+    "title": "Part 19 — React Router (v6/v7) & Navigation Architecture",
+    "badge": "Routing",
+    "color": "#ec4899",
+    "sections": [
+      {
+        "id": "19.1",
+        "title": "46. SPA Navigation, Nested Routes & Outlets",
+        "content": "### 1. How Client-Side Routing Works\nIn traditional MPAs, clicking a link triggers an HTTP request to the web server, returning a fresh HTML page and causing a full-page reload.\nIn SPAs with React Router, clicking a `<Link>` intercepts the click, uses the browser's **History API** (`history.pushState()`) to update the URL without reloading, and re-renders only the matched route component.\n\n### 2. Nested Routes & Layouts with <Outlet />\nNested routes allow child pages (e.g. `/dashboard/analytics`, `/dashboard/billing`) to share a persistent parent layout (Sidebar, Navbar) without remounting the layout on navigation.",
+        "code": "import { BrowserRouter, Routes, Route, Link, Outlet, useParams, Navigate } from 'react-router-dom';\n\n// 1. Shared Layout Shell\nfunction DashboardLayout() {\n  return (\n    <div className=\"dashboard-grid\">\n      <aside className=\"sidebar\">\n        <Link to=\"/dashboard/analytics\">Analytics</Link>\n        <Link to=\"/dashboard/team\">Team</Link>\n      </aside>\n      <main className=\"content\">\n        <Outlet /> {/* Child routes render right here! */}\n      </main>\n    </div>\n  );\n}\n\n// 2. Protected Route Guard\nfunction ProtectedRoute({ isAuthenticated, children }) {\n  if (!isAuthenticated) {\n    return <Navigate to=\"/login\" replace />;\n  }\n  return children;\n}\n\n// 3. Router Configuration\nexport function AppRouter({ isAuthenticated }) {\n  return (\n    <BrowserRouter>\n      <Routes>\n        <Route path=\"/login\" element={<LoginPage />} />\n        \n        {/* Nested Dashboard with Protection */}\n        <Route path=\"/dashboard\" element={\n          <ProtectedRoute isAuthenticated={isAuthenticated}>\n            <DashboardLayout />\n          </ProtectedRoute>\n        }>\n          <Route index element={<DashboardOverview />} />\n          <Route path=\"analytics\" element={<AnalyticsView />} />\n          <Route path=\"team/:memberId\" element={<MemberDetail />} />\n        </Route>\n        \n        {/* Catch-all 404 Route */}\n        <Route path=\"*\" element={<NotFoundPage />} />\n      </Routes>\n    </BrowserRouter>\n  );\n}",
+        "keyTakeaways": [
+          "React Router uses the HTML5 History API (pushState) for seamless client-side page transitions.",
+          "<Outlet /> renders child route elements inside shared parent layouts without remounting.",
+          "Client-side protected routes improve UX, but backend APIs must always perform authoritative token validation."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 20,
+    "title": "Part 20 — Material UI (MUI) & UI Component Libraries",
+    "badge": "UI Libraries",
+    "color": "#06b6d4",
+    "sections": [
+      {
+        "id": "20.1",
+        "title": "47. MUI System: ThemeProvider, sx Prop & Layout Components",
+        "content": "### 1. Material UI (MUI) Design Architecture\nMUI (formerly Material-UI) is one of the world's most widely adopted enterprise React component libraries, adhering to Google's Material Design system.\n**Core Concepts**:\n- `ThemeProvider` & `createTheme()`: Centralized design tokens (color palettes, typography scales, spacing units, breakpoints).\n- `CssBaseline`: Normalizes browser default CSS styles across Chrome, Firefox, Safari.\n- **The `sx` Prop**: Supercharged inline styling with direct access to theme tokens (`sx={{ p: 2, bgcolor: 'primary.main', display: { xs: 'none', md: 'block' } }}`).\n- **Layout Primitives**: `Box` (div replacement), `Stack` (flexbox column/row), `Grid` (12-column responsive layout).",
+        "code": "import React from 'react';\nimport { createTheme, ThemeProvider, CssBaseline, Box, Stack, Typography, Button, TextField } from '@mui/material';\n\n// 1. Customized Design Tokens\nconst theme = createTheme({\n  palette: {\n    mode: 'dark',\n    primary: { main: '#61dafb' },\n    background: { default: '#0b0f19', paper: '#111827' }\n  },\n  typography: {\n    fontFamily: '\"Inter\", \"Roboto\", sans-serif',\n    h5: { fontWeight: 800 }\n  }\n});\n\n// 2. Production MUI Form Card\nexport function MuiLoginCard({ onLogin }) {\n  return (\n    <ThemeProvider theme={theme}>\n      <CssBaseline />\n      <Box sx={{\n        maxWidth: 420,\n        mx: 'auto',\n        mt: 8,\n        p: 4,\n        bgcolor: 'background.paper',\n        borderRadius: 3,\n        border: '1px solid rgba(255,255,255,0.08)',\n        boxShadow: 24\n      }}>\n        <Stack spacing={3}>\n          <Typography variant=\"h5\" color=\"primary\">Enterprise Login</Typography>\n          <TextField label=\"Work Email\" variant=\"outlined\" fullWidth />\n          <TextField label=\"Password\" type=\"password\" variant=\"outlined\" fullWidth />\n          <Button variant=\"contained\" size=\"large\" fullWidth onClick={onLogin}>\n            Sign In\n          </Button>\n        </Stack>\n      </Box>\n    </ThemeProvider>\n  );\n}",
+        "comparisonTable": [
+          {
+            "aspect": "MUI (Material UI)",
+            "detail": "Batteries-included enterprise components, strong theming, higher initial bundle size."
+          },
+          {
+            "aspect": "shadcn/ui & Radix UI",
+            "detail": "Copy-paste headless unstyled primitives styled with Tailwind CSS; zero bundle lock-in."
+          },
+          {
+            "aspect": "Tailwind CSS",
+            "detail": "Utility-first CSS framework; no pre-built JavaScript components."
+          }
+        ],
+        "keyTakeaways": [
+          "MUI provides enterprise-grade accessible components out of the box.",
+          "Use the sx prop for theme-aware responsive styles instead of hardcoded CSS rules.",
+          "Always test MUI components using accessible roles (e.g., getByRole('button')) rather than private class names."
+        ]
+      }
+    ]
+  },
+  {
+    "id": 21,
+    "title": "Part 21 — Server State & 13 Real-World Projects",
+    "badge": "Production Projects",
+    "color": "#8b5cf6",
+    "sections": [
+      {
+        "id": "21.1",
+        "title": "48. Server State: TanStack Query vs Client Global State",
+        "content": "### 1. The Fundamental Distinction: Client State vs Server State\n- **Client State**: Data owned exclusively by the browser session (theme, modal visibility, active tab, form draft). Synchronous and fully under client control.\n- **Server State**: Data persisted remotely in a database (user profile, invoices, student bookings). Asynchronous, shared across multiple users, and potentially stale the moment it is fetched.\n\n### 2. TanStack Query (React Query)\nTanStack Query manages server state automatically:\n- Caching & deduplication: Multiple components requesting `/api/user` generate only ONE network request.\n- Background refetching on window focus: Data is automatically refreshed when the user returns to the browser tab.\n- Stale-While-Revalidate: Instant UI render from cache while fetching fresh data in the background.",
+        "code": "import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';\n\n// Fetch query with automatic caching & refetching:\nfunction UserProfile({ userId }) {\n  const queryClient = useQueryClient();\n\n  const { data: user, isLoading, isError } = useQuery({\n    queryKey: ['user', userId],\n    queryFn: () => fetch(`/api/users/${userId}`).then(r => r.json()),\n    staleTime: 1000 * 60 * 5, // Data remains fresh for 5 minutes\n  });\n\n  const updateMutation = useMutation({\n    mutationFn: (newBio) => fetch(`/api/users/${userId}`, { method: 'PATCH', body: JSON.stringify({ bio: newBio }) }),\n    onSuccess: () => {\n      // Invalidate cache: Triggers automatic background refetch!\n      queryClient.invalidateQueries({ queryKey: ['user', userId] });\n    }\n  });\n\n  if (isLoading) return <div>Loading profile...</div>;\n  if (isError) return <div>Failed to load profile.</div>;\n\n  return <div><h3>{user.name}</h3><p>{user.bio}</p></div>;\n}",
+        "keyTakeaways": [
+          "Do not store server API data in Redux or useState; use TanStack Query or SWR.",
+          "staleTime determines when fresh data becomes stale; gcTime controls when unused cache is garbage collected.",
+          "Mutations invalidate cache queries, automatically triggering seamless UI updates."
+        ]
+      },
+      {
+        "id": "21.2",
+        "title": "49. 13 Progressive Enterprise Project Architectures",
+        "content": "### 1. Curriculum Project Roadmap\nThe learning platform provides 13 progressive project specifications from absolute beginner to senior production grade:\n\n1. **Interactive Profile & Counter**: Component fundamentals, props, and `useState` immutability.\n2. **Validated Registration Form**: Multi-field validation, touched tracking, and accessible field error messaging.\n3. **Searchable & Paginated Data List**: Client-side filtering, debounced input, and pagination calculations.\n4. **Reusable Component Library**: Button, Modal, Dropdown, and Input primitives with composable tokens.\n5. **React + TypeScript Task Manager**: Strict type safety, discriminated union filters, and typed LocalStorage persistence.\n6. **Redux Toolkit Shopping Cart**: `createSlice`, `configureStore`, typed thunks, and quantity adjustments.\n7. **Zustand Cart with Persistence**: Lightweight module store, atomic selectors, and automatic local storage persistence.\n8. **React Router Multi-Tier Dashboard**: Nested `<Outlet />` layouts, dynamic parameters, and protected auth guards.\n9. **MUI Admin Operations Dashboard**: Theming, responsive Grid, Dialog confirmations, and Data Grid tables.\n10. **Full CRUD App with TanStack Query**: Server-state caching, background revalidation, and optimistic UI mutations.\n11. **RBAC Enterprise Portal**: Role-based access control, JWT refresh interceptors, and breadcrumbs.\n12. **Fully Tested Production Feature**: 100% behavior coverage using Vitest, RTL, UserEvent, and MSW network mocking.\n13. **Full-Stack SaaS Application (Chrona / LesHub)**: Complete end-to-end architecture unifying React 19, TypeScript, TanStack Query, Zustand, React Router, MUI, accessibility, and Vitest test suites.",
+        "keyTakeaways": [
+          "Follow the 13-project progression to build senior full-stack mastery.",
+          "Real-world enterprise applications separate server state (TanStack Query) from client UI state (Zustand).",
+          "Every production feature must be validated by automated Vitest and React Testing Library suites."
+        ]
+      }
+    ]
+  }
+]
